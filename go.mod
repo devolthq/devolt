@@ -12,7 +12,7 @@ require (
 	github.com/rollmelette/rollmelette v0.1.1
 	go.mongodb.org/mongo-driver v1.14.0
 	gonum.org/v1/gonum v0.15.0
-	google.golang.org/protobuf v1.31.0
+	google.golang.org/protobuf v1.33.0
 )
 
 require (
