@@ -21,13 +21,13 @@ func NewStationRepositoryMongo(client *mongo.Client, dbName string, stationsColl
 	}
 }
 
-func (s *StationRepositoryMongo) CreateStation(station *entity.Station) (*mongo.InsertOneResult, error) {
+func (s *StationRepositoryMongo) CreateStation(station *entity.StationSimulation) (*mongo.InsertOneResult, error) {
 	result, err := s.Collection.InsertOne(context.TODO(), station)
 	log.Printf("Inserting station %s into the MongoDB collection: %s", result, s.Collection.Name())
 	return result, err
 }
 
-func (s *StationRepositoryMongo) FindAllStations() ([]*entity.Station, error) {
+func (s *StationRepositoryMongo) FindAllStations() ([]*entity.StationSimulation, error) {
 	cur, err := s.Collection.Find(context.TODO(), bson.D{})
 	log.Printf("Selecting all stations from the MongoDB collection %s", s.Collection.Name())
 	if err != nil {
@@ -35,7 +35,7 @@ func (s *StationRepositoryMongo) FindAllStations() ([]*entity.Station, error) {
 	}
 	defer cur.Close(context.TODO())
 
-	var stations []*entity.Station
+	var stations []*entity.StationSimulation
 	for cur.Next(context.TODO()) {
 		var sensor bson.M
 		err := cur.Decode(&sensor)
@@ -50,7 +50,7 @@ func (s *StationRepositoryMongo) FindAllStations() ([]*entity.Station, error) {
 			return nil, err
 		}
 
-		var sensorData entity.Station
+		var sensorData entity.StationSimulation
 		err = json.Unmarshal(jsonStationData, &sensorData)
 		if err != nil {
 			return nil, err

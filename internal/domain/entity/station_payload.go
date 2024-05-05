@@ -8,10 +8,9 @@ import (
 	"time"
 )
 
-type Payload struct {
+type StationPayload struct {
 	Station_ID string  `json:"station_id"`
-	Battery    float64 `json:"battery"`
-	Percentage float64 `json:"percentage"`
+	Rate       float64 `json:"rate"`
 	Latitude   float64 `json:"latitude"`
 	Longitude  float64 `json:"longitude"`
 }
@@ -39,7 +38,7 @@ func EntropyWithConfidenceInterval(min float64, max float64, z float64) float64 
 	return math.Round(rand.Float64()*(a-b) + b)
 }
 
-func NewPayload(id string, params map[string]interface{}, latitude float64, longitude float64) (*Payload, error) {
+func NewStationPayload(id string, params map[string]interface{}, latitude float64, longitude float64) (*StationPayload, error) {
 	min, ok := params["min"].(float64)
 	if !ok {
 		log.Fatalf("min value not found or not a float64: %v", params["min"])
@@ -48,12 +47,10 @@ func NewPayload(id string, params map[string]interface{}, latitude float64, long
 	if !ok {
 		log.Fatalf("max value not found or not a float64: %v", params["max"])
 	}
-	batteryValue := EntropyWithConfidenceInterval(min, max, 1.96) // 95% confidence interval with z = 1.96 (https://en.wikipedia.org/wiki/Standard_normal_table)
-	batteryPercentage := (batteryValue - min) / (max - min) * 100
-	return &Payload{
+	rate := EntropyWithConfidenceInterval(min, max, 1.96) // 95% confidence interval with z = 1.96 (https://en.wikipedia.org/wiki/Standard_normal_table)
+	return &StationPayload{
 		Station_ID: id,
-		Battery:    batteryValue,
-		Percentage: batteryPercentage,
+		Rate:       rate,
 		Latitude:   latitude,
 		Longitude:  longitude,
 	}, nil

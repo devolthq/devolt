@@ -22,7 +22,7 @@ func main() {
 		"auto.offset.reset":  "latest",
 	}
 
-	client, err := ethclient.Dial(os.Getenv("EVM_RPC_URL"))
+	client, err := ethclient.Dial(os.Getenv("TESTNET_RPC_URL"))
 	if err != nil {
 		log.Fatalf("Failed to connect to blockchain: %v", err)
 	}
@@ -32,7 +32,7 @@ func main() {
 		log.Fatalf("Failed to get chain ID: %v", err)
 	}
 
-	privateKey, err := crypto.HexToECDSA(os.Getenv("EVM_PRIVATE_KEY"))
+	privateKey, err := crypto.HexToECDSA(os.Getenv("TESTNET_PRIVATE_KEY"))
 	if err != nil {
 		log.Fatalf("Failed to parse private key: %v", err)
 	}
@@ -47,8 +47,8 @@ func main() {
 		log.Fatalf("Failed to create instance: %v", err)
 	}
 
-	kafkaRepository := kafka.NewKafkaConsumer(configMap, []string{os.Getenv("CONFLUENT_KAFKA_TOPIC_NAME")})
-	
+	kafkaRepository := kafka.NewKafkaConsumer([]string{os.Getenv("CONFLUENT_KAFKA_SIMULATION_TOPIC_NAME")}, configMap)
+
 	go func() {
 		if err := kafkaRepository.Consume(msgChan); err != nil {
 			log.Printf("Error consuming kafka queue: %v", err)
@@ -59,7 +59,7 @@ func main() {
 		if transaction, err := instance.AddInput(opts, common.HexToAddress(os.Getenv("APPLICATION_CONTRACT_ADDRESS")), msg.Value); err != nil {
 			log.Fatalf("Failed to add input: %v", err)
 		} else {
-			log.Printf("Transaction sent with hash: %v, payload: %v and gas: %v" , transaction.Hash().Hex(), string(msg.Value), transaction.GasPrice().Uint64())
+			log.Printf("Transaction sent with hash: %v, payload: %v and gas: %v", transaction.Hash().Hex(), string(msg.Value), transaction.GasPrice().Uint64())
 		}
 	}
 }

@@ -2,39 +2,46 @@ package kafka
 
 import (
 	"fmt"
-	"log"
-
 	ckafka "github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	"log"
 )
 
 type KafkaConsumer struct {
-	ConfigMap *ckafka.ConfigMap
 	Topics    []string
+	ConfigMap *ckafka.ConfigMap
 }
 
-func NewKafkaConsumer(configMap *ckafka.ConfigMap, topics []string) *KafkaConsumer {
+func NewKafkaConsumer(topics []string, configMap *ckafka.ConfigMap) *KafkaConsumer {
 	return &KafkaConsumer{
-		ConfigMap: configMap,
 		Topics:    topics,
+		ConfigMap: configMap,
 	}
 }
 
 func (c *KafkaConsumer) Consume(msgChan chan *ckafka.Message) error {
 	consumer, err := ckafka.NewConsumer(c.ConfigMap)
 	if err != nil {
-		log.Printf("Error creating kafka consumer: %v", err)
+		return fmt.Errorf("failed to create Kafka consumer: %v", err)
 	}
+
+	defer func() {
+		if err := consumer.Close(); err != nil {
+			log.Printf("Error closing Kafka consumer: %v", err)
+		}
+	}()
+
 	err = consumer.SubscribeTopics(c.Topics, nil)
 	if err != nil {
-		log.Printf("Error subscribing to topics: %v", err)
+		return fmt.Errorf("failed to subscribe to topics: %v", err)
 	}
+	
 	for {
 		msg, err := consumer.ReadMessage(-1)
-		log.Printf("Message on %s: %s", msg.TopicPartition, string(msg.Value))
 		if err == nil {
 			msgChan <- msg
+			log.Printf("Consuming message on %s: %s", *msg.TopicPartition.Topic, string(msg.Value))
 		} else {
-			fmt.Printf("Consumer error: %v (%v)\n", err, msg)
+			return fmt.Errorf("failed to read message: %v", err)
 		}
 	}
 }

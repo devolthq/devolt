@@ -17,8 +17,11 @@ else
 endif
 
 .PHONY: env
-env: ./.env.develop.tmpl
-	cp ./.env.develop.tmpl ./.env.develop
+env: ./.env.develop
+	$(START_LOG)
+	@cp ./.env.develop.tmpl ./.env.develop
+	@touch .cartesi.env
+	$(END_LOG)
 
 .PHONY: infra
 infra:
@@ -47,7 +50,7 @@ iot:
 	@docker compose \
 		-f ./deployments/compose.packages.yaml \
 		--env-file ./.env.develop \
-		up simulation streaming --build -d
+		up app simulation streaming --build
 	$(END_LOG)
 
 .PHONY: prod

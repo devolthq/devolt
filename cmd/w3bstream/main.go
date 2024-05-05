@@ -74,13 +74,13 @@ func main() {
 		log.Printf("Starting station: %v", station)
 		go func(station usecase.FindAllStationsOutputDTO) {
 			defer wg.Done()
-			client, err := machinefi.NewMachineFiMqttClient(station.ID, opts)
+			client, err := machinefi.NewMachineFiMqttClient(station.Station_ID, opts)
 			if err != nil {
 				log.Fatalf("Failed to create client: %v", err)
 			}
 			for {
-				payload, err := entity.NewPayload(
-					station.ID,
+				payload, err := entity.NewStationPayload(
+					station.Station_ID,
 					station.Params,
 					station.Latitude,
 					station.Longitude,

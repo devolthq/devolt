@@ -5,18 +5,17 @@ import (
 )
 
 type FindAllStationsUseCase struct {
-	StationRepository entity.StationRepository
+	StationRepository entity.StationSimulationRepository
 }
 
 type FindAllStationsOutputDTO struct {
-	ID        string                 `json:"sensor_id"`
-	Name      string                 `json:"name"`
-	Latitude  float64                `json:"latitude"`
-	Longitude float64                `json:"longitude"`
-	Params    map[string]interface{} `json:"params"`
+	Station_ID string                 `json:"station_id"`
+	Latitude   float64                `json:"latitude"`
+	Longitude  float64                `json:"longitude"`
+	Params     map[string]interface{} `json:"params"`
 }
 
-func NewFindAllStationsUseCase(stationRepository entity.StationRepository) *FindAllStationsUseCase {
+func NewFindAllStationsUseCase(stationRepository entity.StationSimulationRepository) *FindAllStationsUseCase {
 	return &FindAllStationsUseCase{StationRepository: stationRepository}
 }
 
@@ -28,10 +27,10 @@ func (f *FindAllStationsUseCase) Execute() ([]FindAllStationsOutputDTO, error) {
 	var output []FindAllStationsOutputDTO
 	for _, station := range stations {
 		output = append(output, FindAllStationsOutputDTO{
-			ID:        station.ID,
-			Latitude:  station.Latitude,
-			Longitude: station.Longitude,
-			Params:    station.Params,
+			Station_ID: station.Station_ID,
+			Latitude:   station.Latitude,
+			Longitude:  station.Longitude,
+			Params:     station.Params,
 		})
 	}
 	return output, nil

@@ -13,6 +13,19 @@ volumes:
   mongodb-data:
 
 services:
+  app:
+    container_name: app
+    hostname: app
+    env_file:
+      - ../.env.develop
+    restart: always
+    depends_on:
+      - simulation
+    build:
+      context: ..
+      dockerfile: build/Dockerfile.app
+    ports:
+      - 8083:8083
   simulation:
     container_name: simulation
     hostname: simulation
