@@ -1,4 +1,4 @@
-Roadmap
+# Roadmap
 
 - [ ] Rollup with cartesi;
 - [ ] Tests;
@@ -11,7 +11,7 @@ Roadmap
 - [ ] Frontend revamp with Manu
 - [ ] First hardware impl with raspberry pi pico 2W or raspberry pi pico W or other microcontroller;
 
-Future plans:
+## Future plans
 
 - [ ] Integration with w3bstream;
 - [ ] P&D with risc0 for AA and OIDC ( Google );
