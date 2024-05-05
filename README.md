@@ -3,7 +3,7 @@ Roadmap
 - [ ] Rollup with cartesi;
 - [ ] Tests;
 - [ ] Unify Dockerfile and implement a multi-stage build with librdkafka and CGO=1;
-- [ ] Initialize Kafka topic in the docker- [ ]compose file instead of hivemq config.xml;
+- [ ] Initialize Kafka topic in the docker-compose file instead of hivemq config.xml;
 - [ ] CLOUD support with pulumi, kubernetes, hivemq-cloud and confluent cloud;
 - [ ] CI & CD
 - [ ] Docs with starlight;
