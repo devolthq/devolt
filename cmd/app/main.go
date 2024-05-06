@@ -47,5 +47,6 @@ func main() {
 	mux.HandleFunc("GET /api/v1/stations", stationHandlers.FindAllStationsHandler)
 	mux.HandleFunc("POST /api/v1/stations", stationHandlers.CreateSensorHandler)
 	r := cors.Default().Handler(mux)
+	log.Printf("Starting server on port 8083")
 	http.ListenAndServe(":8083", r)
 }

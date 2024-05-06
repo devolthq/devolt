@@ -21,10 +21,10 @@ func NewStationRepositoryMongo(client *mongo.Client, dbName string, stationsColl
 	}
 }
 
-func (s *StationRepositoryMongo) CreateStation(station *entity.StationSimulation) (*mongo.InsertOneResult, error) {
-	result, err := s.Collection.InsertOne(context.TODO(), station)
-	log.Printf("Inserting station %s into the MongoDB collection: %s", result, s.Collection.Name())
-	return result, err
+func (s *StationRepositoryMongo) CreateStation(station *entity.StationSimulation) (error) {
+	insertId, err := s.Collection.InsertOne(context.TODO(), station)
+	log.Printf("Inserting station %s into the MongoDB collection: %s", insertId, s.Collection.Name())
+	return err
 }
 
 func (s *StationRepositoryMongo) FindAllStations() ([]*entity.StationSimulation, error) {

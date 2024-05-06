@@ -1,11 +1,7 @@
 package entity
 
-import (
-	"go.mongodb.org/mongo-driver/mongo"
-)
-
 type StationSimulationRepository interface {
-	CreateStation(station *StationSimulation) (*mongo.InsertOneResult, error)
+	CreateStation(station *StationSimulation) (error)
 	FindAllStations() ([]*StationSimulation, error)
 }
 
