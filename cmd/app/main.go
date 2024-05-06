@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-
 	ckafka "github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/devolthq/devolt/internal/infra/kafka"
 	"github.com/devolthq/devolt/internal/infra/repository"

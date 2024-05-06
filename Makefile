@@ -61,11 +61,6 @@ iot:
 		--env-file ./.env.develop \
 		up app simulation streaming --build
 	$(END_LOG)
-
-.PHONY: prod
-prod:
-	$(START_LOG)
-	@cartesi run --epoch-duration 60
 	
 .PHONY: generate
 generate:
