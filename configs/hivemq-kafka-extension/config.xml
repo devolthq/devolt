@@ -17,13 +17,5 @@
             </mqtt-topic-filters>
             <kafka-topic>stations</kafka-topic>
         </mqtt-to-kafka-mapping>
-        <mqtt-to-kafka-mapping>
-            <id>devolt-handler</id>
-            <cluster-id>kafka</cluster-id>
-            <mqtt-topic-filters>
-                <mqtt-topic-filter>stations_queue</mqtt-topic-filter>
-            </mqtt-topic-filters>
-            <kafka-topic>stations_queue</kafka-topic>
-        </mqtt-to-kafka-mapping>
     </mqtt-to-kafka-mappings>
 </kafka-configuration>

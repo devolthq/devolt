@@ -26,7 +26,16 @@ env: ./.env.develop
 .PHONY: infra
 infra:
 	$(START_LOG)
-	@docker compose -f ./deployments/compose.infra.yaml up --build -d
+	@docker compose \
+		-f ./deployments/compose.infra.yaml up \
+		--build -d
+	@echo "Creating kafka topics..."
+	@sleep 30
+	@docker compose \
+		-f ./deployments/compose.infra.yaml exec \
+		kafka kafka-topics --bootstrap-server kafka:9094 \
+		--create --topic stations_queue \
+		--partitions 10
 	$(END_LOG)
 
 .PHONY: dev
@@ -57,7 +66,6 @@ iot:
 prod:
 	$(START_LOG)
 	@cartesi run --epoch-duration 60
-	$(END_LOG)
 	
 .PHONY: generate
 generate:

@@ -51,7 +51,7 @@ services:
       - kafka
     ports:
       - 1883:1883
-      - 8080:8080
+      - 8082:8080
     extra_hosts:
       - "host.docker.internal:host-gateway"
   mongo:
