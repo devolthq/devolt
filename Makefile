@@ -67,7 +67,8 @@ generate:
 
 .PHONY: test
 test:
-	@echo "TBD"
+	@cd contracts && forge test
+	@go test ./... -coverprofile=./test/coverage_sheet.md -v
 
 .PHONY: deploy
 deploy:
@@ -80,3 +81,7 @@ bytecode:
 	$(START_LOG)
 	@cd contracts && forge script $(BYTECODE_NETWORK_ARGS)
 	$(END_LOG)
+
+.PHONY: coverage
+coverage: test
+	@go tool cover -html=./test/coverage_sheet.md
