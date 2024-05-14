@@ -7,12 +7,12 @@ RPC_URL := http://localhost:8545
 PRIVATE_KEY := 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 
 ifeq ($(NETWORK), localhost)
-	BYTECODE_NETWORK_ARGS := script/Bytecode.s.sol --rpc-url $(RPC_URL) --private-key $(PRIVATE_KEY) --broadcast -v
+	BYTECODE_NETWORK_ARGS := script/Bytecode.s.sol --rpc-url $(RPC_URL) --private-key $(PRIVATE_KEY) -v
 	DEPLOY_NETWORK_ARGS := script/DeployProxy.s.sol --rpc-url $(RPC_URL) --private-key $(PRIVATE_KEY) --broadcast -v
 else
 	RPC_URL := $(TESTNET_RPC_URL)
 	PRIVATE_KEY := $(TESTNET_PRIVATE_KEY)
-	BYTECODE_NETWORK_ARGS := script/ExecutedVouchers.s.sol --rpc-url $(RPC_URL) --private-key $(PRIVATE_KEY) --broadcast --verify --etherscan-api-key $(TESTNET_BLOCKSCAN_API_KEY) -v
+	BYTECODE_NETWORK_ARGS := script/Bytecode.s.sol --rpc-url $(RPC_URL) --private-key $(PRIVATE_KEY) -v
 	DEPLOY_NETWORK_ARGS := script/DeployProxy.s.sol --rpc-url $(RPC_URL) --private-key $(PRIVATE_KEY) --broadcast --verify --etherscan-api-key $(TESTNET_BLOCKSCAN_API_KEY) -v
 endif
 
@@ -83,7 +83,8 @@ deploy:
 .PHONY: bytecode
 bytecode:
 	$(START_LOG)
-	@cd contracts && forge script $(BYTECODE_NETWORK_ARGS)
+	@cd contracts && forge script $(BYTECODE_NETWORK_ARGS) > ../bytecode.txt
+	@echo "Bytecode of Volt Contract created"
 	$(END_LOG)
 
 .PHONY: coverage
