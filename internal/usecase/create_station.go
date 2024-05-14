@@ -3,39 +3,28 @@ package usecase
 import (
 	"github.com/devolthq/devolt/internal/domain/entity"
 	"github.com/google/uuid"
+	"github.com/devolthq/devolt/internal/domain/dto"
 )
 
-type CreateStationUseCase struct {
-	StationRepository entity.StationSimulationRepository
+type CreateDeviceUseCase struct {
+	DeviceRepository entity.DeviceRepository
 }
 
-func NewCreateStationUseCase(stationRepository entity.StationSimulationRepository) *CreateStationUseCase {
-	return &CreateStationUseCase{StationRepository: stationRepository}
+func NewCreateDeviceUseCase(deviceRepository entity.DeviceRepository) *CreateDeviceUseCase {
+	return &CreateDeviceUseCase{DeviceRepository: deviceRepository}
 }
 
-type CreateStationInputDTO struct {
-	Latitude  float64                `json:"latitude"`
-	Longitude float64                `json:"longitude"`
-	Params    map[string]interface{} `json:"params"`
-}
-
-type CreateStationOutputDTO struct {
-	Station_ID string                 `json:"station_id"`
-	Latitude   float64                `json:"latitude"`
-	Longitude  float64                `json:"longitude"`
-	Params     map[string]interface{} `json:"params"`
-}
-
-func (c *CreateStationUseCase) Execute(input CreateStationInputDTO) (*CreateStationOutputDTO, error) {
-	station := entity.NewStationSimulation(uuid.New().String(), input.Latitude, input.Longitude, input.Params)
-	err := c.StationRepository.CreateStation(station)
+func (c *CreateDeviceUseCase) Execute(input *dto.CreateDeviceInputDTO) (*dto.CreateDeviceOutputDTO, error) {
+	device := entity.NewDevice(uuid.New().String(), input.Owner, input.Latitude, input.Longitude, input.Params)
+	err := c.DeviceRepository.CreateDevice(device)
 	if err != nil {
 		return nil, err
 	}
-	return &CreateStationOutputDTO{
-		Station_ID: station.Station_ID,
-		Latitude:   station.Latitude,
-		Longitude:  station.Longitude,
-		Params:     station.Params,
+	return &dto.CreateDeviceOutputDTO{
+		Device_ID: 	device.Device_ID,
+		Owner:      device.Owner,
+		Latitude:   device.Latitude,
+		Longitude:  device.Longitude,
+		Params:     device.Params,
 	}, nil
 }

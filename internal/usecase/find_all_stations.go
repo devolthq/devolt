@@ -1,36 +1,31 @@
 package usecase
 
 import (
+	"github.com/devolthq/devolt/internal/domain/dto"
 	"github.com/devolthq/devolt/internal/domain/entity"
 )
 
-type FindAllStationsUseCase struct {
-	StationRepository entity.StationSimulationRepository
+type FindAllDevicesUseCase struct {
+	DeviceRepository entity.DeviceRepository
 }
 
-type FindAllStationsOutputDTO struct {
-	Station_ID string                 `json:"station_id"`
-	Latitude   float64                `json:"latitude"`
-	Longitude  float64                `json:"longitude"`
-	Params     map[string]interface{} `json:"params"`
+func NewFindAllDevicesUseCase(deviceRepository entity.DeviceRepository) *FindAllDevicesUseCase {
+	return &FindAllDevicesUseCase{DeviceRepository: deviceRepository}
 }
 
-func NewFindAllStationsUseCase(stationRepository entity.StationSimulationRepository) *FindAllStationsUseCase {
-	return &FindAllStationsUseCase{StationRepository: stationRepository}
-}
-
-func (f *FindAllStationsUseCase) Execute() ([]FindAllStationsOutputDTO, error) {
-	stations, err := f.StationRepository.FindAllStations()
+func (f *FindAllDevicesUseCase) Execute() ([]*dto.FindAllDevicesOutputDTO, error) {
+	devices, err := f.DeviceRepository.FindAllDevices()
 	if err != nil {
 		return nil, err
 	}
-	var output []FindAllStationsOutputDTO
-	for _, station := range stations {
-		output = append(output, FindAllStationsOutputDTO{
-			Station_ID: station.Station_ID,
-			Latitude:   station.Latitude,
-			Longitude:  station.Longitude,
-			Params:     station.Params,
+	var output []*dto.FindAllDevicesOutputDTO
+	for _, device := range devices {
+		output = append(output, &dto.FindAllDevicesOutputDTO{
+			Device_ID: device.Device_ID,
+			Owner:     device.Owner,
+			Latitude:  device.Latitude,
+			Longitude: device.Longitude,
+			Params:    device.Params,
 		})
 	}
 	return output, nil

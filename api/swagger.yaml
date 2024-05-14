@@ -1,0 +1,73 @@
+basePath: /api/v1
+definitions:
+  dto.CreateDeviceInputDTO:
+    properties:
+      latitude:
+        type: number
+      longitude:
+        type: number
+      params:
+        additionalProperties: true
+        type: object
+    type: object
+  dto.FindAllDevicesOutputDTO:
+    properties:
+      device_id:
+        type: string
+      latitude:
+        type: number
+      longitude:
+        type: number
+      params:
+        additionalProperties: true
+        type: object
+    type: object
+host: localhost:8083
+info:
+  contact:
+    email: henrique@mugen.builders
+    name: DeVolt Team
+    url: https://devolt.xyz
+  description: This is the devolt api server to manage devices.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Devices Api Server
+  version: "1.0"
+paths:
+  /device:
+    get:
+      consumes:
+      - application/json
+      description: GET all devices
+      operationId: find-all-devices
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.FindAllDevicesOutputDTO'
+      summary: Find All Devices
+    post:
+      consumes:
+      - application/json
+      description: Create Device with given latitude, longitude, and params
+      operationId: create-device
+      parameters:
+      - description: Device data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateDeviceInputDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Device created successfully
+          schema:
+            type: string
+      summary: Create Device
+swagger: "2.0"

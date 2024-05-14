@@ -21,6 +21,7 @@ env: ./.env.develop
 	$(START_LOG)
 	@cp ./.env.develop.tmpl ./.env.develop
 	@touch .cartesi.env
+	@echo "Environment file created at ./.env.develop"
 	$(END_LOG)
 
 .PHONY: infra
@@ -34,7 +35,7 @@ infra:
 	@docker compose \
 		-f ./deployments/compose.infra.yaml exec \
 		kafka kafka-topics --bootstrap-server kafka:9094 \
-		--create --topic stations_queue \
+		--create --topic device-creation-queue \
 		--partitions 10
 	$(END_LOG)
 
@@ -59,7 +60,7 @@ iot:
 	@docker compose \
 		-f ./deployments/compose.packages.yaml \
 		--env-file ./.env.develop \
-		up app simulation streaming --build
+		up api-server simulation streaming --build
 	$(END_LOG)
 	
 .PHONY: generate
@@ -88,3 +89,14 @@ bytecode:
 .PHONY: coverage
 coverage: test
 	@go tool cover -html=./test/coverage_sheet.md
+
+.PHONY: docs
+docs:
+	@cd docs && npm run dev
+
+.PHONY: swagger
+swagger:
+	$(START_LOG)
+	@swag init -g ./cmd/api-server/main.go -o ./api
+	@go mod tidy
+	$(END_LOG)

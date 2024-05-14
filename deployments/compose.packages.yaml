@@ -9,13 +9,11 @@
 # https://github.com/docker/awesome-compose
 version: "3.9"
 
-volumes:
-  mongodb-data:
-
 services:
-  app:
-    container_name: app
-    hostname: app
+  api-server:
+    hostname: api-server
+    container_name: api-server
+    platform: linux/amd64
     env_file:
       - ../.env.develop
     restart: always
@@ -23,12 +21,13 @@ services:
       - simulation
     build:
       context: ..
-      dockerfile: build/Dockerfile.app
+      dockerfile: build/Dockerfile.api-server
     ports:
       - 8083:8083
   simulation:
-    container_name: simulation
     hostname: simulation
+    container_name: simulation
+    platform: linux/amd64
     env_file:
       - ../.env.develop
     restart: always
@@ -36,8 +35,9 @@ services:
       context: ..
       dockerfile: build/Dockerfile.simulation
   streaming:
-    container_name: streaming
     hostname: streaming
+    container_name: streaming
+    platform: linux/amd64
     env_file:
       - ../.env.develop
     restart: always
