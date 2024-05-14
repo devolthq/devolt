@@ -8,7 +8,7 @@
 - [X] Implement a multi-stage build with librdkafka and CGO=1;
 - [X] Initialize Kafka topic in the docker-compose command instead of hivemq config.xml; [reference](https://github.com/epomatti/go-kafka/blob/main/README.md#running-on-docker)
 - [ ] CLOUD support with pulumi, aws, hivemq-cloud and confluent cloud;
-- [ ] CI & CD;
+- [x] CI & CD starlight;
 - [ ] Docs with starlight;
 - [ ] README.md with business part and also all entrypoints;
 - [ ] First hardware impl with raspberry pi pico 2W or raspberry pi pico W or other microcontroller;
