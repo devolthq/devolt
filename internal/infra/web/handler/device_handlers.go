@@ -46,7 +46,7 @@ func (s *DeviceHandlers) CreateDeviceHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"Error marshaling device data": err.Error()})
 		return
 	}
-	s.KafkaClient.Produce(outputBytes, []byte("new_device"), os.Getenv("KAFKA_HANDLER_TOPIC_NAME"))
+	err = s.KafkaClient.Produce(outputBytes, []byte("new_device"), os.Getenv("KAFKA_HANDLER_TOPIC_NAME"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
