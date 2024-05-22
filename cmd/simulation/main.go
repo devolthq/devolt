@@ -2,10 +2,14 @@ package main
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/rand"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
-	"github.com/devolthq/devolt/internal/domain/dto"
 	ckafka "github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	"github.com/devolthq/devolt/internal/domain/dto"
 	"github.com/devolthq/devolt/internal/domain/entity"
 	"github.com/devolthq/devolt/internal/infra/kafka"
 	"github.com/devolthq/devolt/internal/infra/repository"
@@ -20,6 +24,7 @@ import (
 )
 
 func main() {
+	//////////////////////// MongoDB //////////////////////////
 	options := options.Client().ApplyURI(
 		fmt.Sprintf("mongodb://%s:%s@%s/?retryWrites=true&connectTimeoutMS=10000&authSource=admin&authMechanism=SCRAM-SHA-1&ssl=false",
 			os.Getenv("MONGODB_USERNAME"),
@@ -34,6 +39,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	////////////////////////// Kafka Consumer //////////////////////////
 
 	consumerConfigMap := &ckafka.ConfigMap{
 		"bootstrap.servers":  os.Getenv("KAFKA_BOOTSTRAP_SERVER"),
@@ -44,6 +50,26 @@ func main() {
 
 	msgChan := make(chan *ckafka.Message)
 	kafkaRepository := kafka.NewKafkaConsumer([]string{os.Getenv("KAFKA_HANDLER_TOPIC_NAME")}, consumerConfigMap)
+
+	////////////////////// Load .PEM Private Key //////////////////////
+
+	privateKeyPemData, err := os.ReadFile("./bin/private_key.pem")
+	if err != nil {
+		panic(err)
+	}
+
+	block, _ := pem.Decode(privateKeyPemData)
+	if block == nil {
+		panic("Falha ao decodificar o bloco PEM")
+	}
+
+	privateKey, err := x509.ParseECPrivateKey(block.Bytes)
+	if err != nil {
+		panic(err)
+	}
+
+	///////////////////////// Repositiories ///////////////////////////
+
 	deviceRepository := repository.NewDeviceRepositoryMongo(client, "mongodb", "devices")
 	findAllDevicesUseCase := usecase.NewFindAllDevicesUseCase(deviceRepository)
 
@@ -82,8 +108,24 @@ func main() {
 						log.Println("Error converting to JSON:", err)
 					}
 
-					token := client.Publish(os.Getenv("BROKER_TOPIC"), 1, false, string(jsonBytesPayload))
-					log.Printf("Published: %s, on topic: %s", string(jsonBytesPayload), os.Getenv("BROKER_TOPIC"))
+					r, s, err := ecdsa.Sign(rand.Reader, privateKey, jsonBytesPayload)
+					if err != nil {
+						panic(err)
+					}
+
+					signedData := dto.SignedDataInputDTO{
+						R:       r,
+						S:       s,
+						Payload: jsonBytesPayload,
+					}
+
+					jsonBytesSignedData, err := json.Marshal(signedData)
+					if err != nil {
+						log.Println("Error converting to JSON:", err)
+					}
+
+					token := client.Publish(os.Getenv("BROKER_TOPIC"), 1, false, jsonBytesSignedData)
+					log.Printf("Published: %s, on topic: %s", jsonBytesSignedData, os.Getenv("BROKER_TOPIC"))
 					token.Wait()
 					time.Sleep(120 * time.Second)
 				}
@@ -123,7 +165,7 @@ func main() {
 					log.Fatalf("Failed to create payload: %v", err)
 				}
 
-				jsonBytesPayload, err := json.Marshal(payload)
+				jsonBytesPayload, err := json.Marshal(payload);
 				if err != nil {
 					log.Println("Error converting to JSON:", err)
 				}

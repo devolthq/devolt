@@ -66,6 +66,7 @@ iot:
 .PHONY: generate
 generate:
 	$(START_LOG)
+	@go run ./pkg/ecdsa
 	@go run ./pkg/rollups-contracts/generate
 	$(END_LOG)
 
@@ -98,6 +99,8 @@ docs:
 .PHONY: swagger
 swagger:
 	$(START_LOG)
-	@swag init -g ./cmd/api-server/main.go -o ./api
+	@docker run --rm -v \
+	$(pwd):/code ghcr.io/swaggo/swag:latest \
+	i -g ./cmd/api-server/main.go -o ./api
 	@go mod tidy
 	$(END_LOG)

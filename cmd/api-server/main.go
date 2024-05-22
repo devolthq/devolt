@@ -95,8 +95,7 @@ func main() {
 		}
 	}
 
-	err = router.Run(":8083")
-	if err != nil {
+	if err != router.Run(":8083") {
 		log.Fatal(err)
 	}
 }
