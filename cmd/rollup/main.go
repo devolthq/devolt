@@ -8,16 +8,10 @@ import (
 	"encoding/pem"
 	"log"
 	"log/slog"
-	"math/big"
 	"os"
+	"github.com/devolthq/devolt/internal/domain/dto"
 	"github.com/rollmelette/rollmelette"
 )
-
-type SignedDataInputDTO struct {
-	R       *big.Int `json:"r"`
-	S       *big.Int `json:"s"`
-	Payload []byte   `json:"payload"`
-}
 
 type MyApplication struct{}
 
@@ -34,17 +28,17 @@ func (a *MyApplication) Advance(
 
 	block, _ := pem.Decode(publicKeyPemData)
 	if block == nil {
-		panic("Falha ao decodificar o bloco PEM")
+		log.Fatal("Failed to parse PEM block containing the public key")
 	}
 
 	publicKey, err := x509.ParsePKIXPublicKey(block.Bytes)
 	if err != nil {
-			log.Fatalf("Erro ao parsear a chave pública: %v", err)
+			log.Fatalf("Error parsing public key: %v", err)
 	}
 
-	var data *SignedDataInputDTO
+	var data *dto.SignedDataInputDTO
 	if err := json.Unmarshal(payload, &data); err != nil {
-		slog.Error("json unmarshal error", "error", err)
+		log.Fatalf("Error parsing payload: %v", err)
 		return err
 	}
 	log.Printf("Advance payload with r: %v and s: %v and payload: %v", data.R, data.S, string(data.Payload))

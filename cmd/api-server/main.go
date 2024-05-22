@@ -96,6 +96,6 @@ func main() {
 	}
 
 	if err != router.Run(":8083") {
-		log.Fatal(err)
+		log.Fatalf("Failed to start server: %v", err)
 	}
 }

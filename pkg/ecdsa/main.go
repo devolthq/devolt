@@ -17,6 +17,15 @@ func main() {
 		panic(err)
 	}
 
+	privateKeyBytes, err := x509.MarshalECPrivateKey(privateKey)
+	if err != nil {
+		panic(err)
+	}
+	privateKeyPEM := &pem.Block{
+		Type:  "EC PRIVATE KEY",
+		Bytes: privateKeyBytes,
+	}
+
 	publicKeyBytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
 	if err != nil {
 		panic(err)
@@ -31,6 +40,17 @@ func main() {
 		panic(err)
 	}
 
+	privateKeyFilePath := filepath.Join(dir, "private_key.pem")
+	privateKeyFile, err := os.Create(privateKeyFilePath)
+	if err != nil {
+		panic(err)
+	}
+	defer privateKeyFile.Close()
+	if err := pem.Encode(privateKeyFile, privateKeyPEM); err != nil {
+		panic(err)
+	}
+	log.Printf("Arquivo .pem para chave privada criado em: %s", privateKeyFilePath)
+
 	publicKeyFilePath := filepath.Join(dir, "public_key.pem")
 	publicKeyFile, err := os.Create(publicKeyFilePath)
 	if err != nil {
@@ -40,6 +60,5 @@ func main() {
 	if err := pem.Encode(publicKeyFile, publicKeyPEM); err != nil {
 		panic(err)
 	}
-
-	log.Printf("Archive .pem for public key created at: %s", publicKeyFilePath)
+	log.Printf("Arquivo .pem para chave pública criado em: %s", publicKeyFilePath)
 }

@@ -3,9 +3,10 @@
 - [ ] Rollup with cartesi;
 - [ ] Tests;
 - [ ] Unify Dockerfiles (monolith); [reference](https://github.com/cartesi/rollups-node/blob/main/build/Dockerfile)
-- [ ] Sign the simulation payload with ECDSA;
+- [ ] Create config files instead of in files configurations;
+- [x] Sign the simulation payload with ECDSA;
 - [x] Migrate to gin from pure net/nttp;
-- [x] Generate swagger files with [swago](https://github.com/swaggo/swag);
+- [x] Generate swagger files with [swaggo](https://github.com/swaggo/swag);
 - [X] Implement a multi-stage build with librdkafka and CGO=1;
 - [X] Initialize Kafka topic in the docker-compose command instead of hivemq config.xml; [reference](https://github.com/epomatti/go-kafka/blob/main/README.md#running-on-docker)
 - [ ] CLOUD support with pulumi, aws, hivemq-cloud and confluent cloud;
