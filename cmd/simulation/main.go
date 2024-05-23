@@ -53,7 +53,7 @@ func main() {
 
 	////////////////////// Load .PEM Private Key //////////////////////
 
-	privateKeyPemData, err := os.ReadFile("./bin/private_key.pem")
+	privateKeyPemData, err := os.ReadFile("./private_key.pem")
 	if err != nil {
 		panic(err)
 	}

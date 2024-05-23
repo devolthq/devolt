@@ -10,6 +10,7 @@ require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/google/uuid v1.3.0
 	github.com/machinefi/w3bstream v1.6.4
+	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/rollmelette/rollmelette v0.1.1
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0

@@ -48,9 +48,10 @@ dev:
 .PHONY: build
 build:
 	$(START_LOG)
-	@docker compose \
-		-f ./deployments/compose.packages.yaml build rollup
-	@cartesi build --from-image rollup
+	@docker build \
+		-t rollup:latest \
+		-f ./build/Dockerfile.rollup .
+	@cartesi build --from-image rollup:latest
 	$(END_LOG)
 
 .PHONY: iot
