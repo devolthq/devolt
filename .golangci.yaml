@@ -3,8 +3,6 @@ linters:
     - exhaustive
     - goconst
     - godox
-    - gofmt
-    - gomnd
     - lll
     - misspell
 linters-settings:
