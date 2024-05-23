@@ -2,8 +2,7 @@
 
 - [ ] Rollup with cartesi;
 - [ ] Tests;
-- [ ] Unify Dockerfiles (monolith) [reference](https://github.com/cartesi/rollups-node/blob/main/build/Dockerfile);
-- [ ] Create config files instead of in files configurations;
+- [ ] Create configuration files instead of settings in file to setup mongodb, sqlite, and others;
 - [x] Change rollup Dockerfile to build with the repository;
 - [x] Sign the simulation payload with ECDSA;
 - [x] Migrate to gin from pure net/nttp;
@@ -18,6 +17,5 @@
 ## Future plans
 
 - [ ] First hardware impl with raspberry pi pico 2W or raspberry pi pico W or other microcontroller;
-- [ ] Integration with w3bstream;
-- [ ] P&D with risc0 for AA and OIDC ( Google );
+- [ ] Integration with w3bstream/sprout IOTEX;
 - [ ] P&D with ERC4337;
