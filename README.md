@@ -1,5 +1,5 @@
 # Roadmap
-
+<!-- 
 - [ ] Create configuration files instead of settings in file to setup mongodb, sqlite, and others;
 - [ ] Rollup with cartesi;
 - [ ] Tests;
@@ -19,4 +19,4 @@
 - [ ] First hardware impl with raspberry pi pico 2W or raspberry pi pico W or other microcontroller;
 - [ ] Integration with w3bstream/sprout IOTEX;
 - [ ] P&D with ERC4337;
-- [ ] Implement Cap’n Proto for deserialization -> dapp backend router (switch|case);
+- [ ] Implement Cap’n Proto for deserialization -> dapp backend router (switch|case); -->
