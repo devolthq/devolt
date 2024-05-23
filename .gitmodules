@@ -4,3 +4,6 @@
 [submodule "contracts/lib/openzeppelin-contracts"]
 	path = contracts/lib/openzeppelin-contracts
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "third_party/go-capnp"]
+	path = third_party/go-capnp
+	url = https://github.com/capnproto/go-capnp
