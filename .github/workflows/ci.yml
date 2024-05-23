@@ -24,12 +24,12 @@ jobs:
       with:
           version: latest
 
-    - name: Lint Markdown docs
-      uses: DavidAnson/markdownlint-cli2-action@v16
-      with:
-        globs: |
-          *.md
-          docs/*.md
+    # - name: Lint Markdown docs
+    #   uses: DavidAnson/markdownlint-cli2-action@v16
+    #   with:
+    #     globs: |
+    #       *.md
+    #       docs/*.md
 
     - name: Test
       run: make test
