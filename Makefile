@@ -48,9 +48,8 @@ dev:
 .PHONY: build
 build:
 	$(START_LOG)
-	@docker build \
-		-t rollup \
-		-f ./build/Dockerfile.rollup .
+	@docker compose \
+		-f ./deployments/compose.packages.yaml build rollup
 	@cartesi build --from-image rollup
 	$(END_LOG)
 

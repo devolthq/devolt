@@ -2,8 +2,9 @@
 
 - [ ] Rollup with cartesi;
 - [ ] Tests;
-- [ ] Unify Dockerfiles (monolith); [reference](https://github.com/cartesi/rollups-node/blob/main/build/Dockerfile)
+- [ ] Unify Dockerfiles (monolith) [reference](https://github.com/cartesi/rollups-node/blob/main/build/Dockerfile);
 - [ ] Create config files instead of in files configurations;
+- [x] Change rollup Dockerfile to build with the repository;
 - [x] Sign the simulation payload with ECDSA;
 - [x] Migrate to gin from pure net/nttp;
 - [x] Generate swagger files with [swaggo](https://github.com/swaggo/swag);

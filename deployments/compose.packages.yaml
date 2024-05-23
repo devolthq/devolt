@@ -44,3 +44,13 @@ services:
     build:
       context: ..
       dockerfile: build/Dockerfile.streaming
+  rollup:
+    hostname: rollup
+    container_name: rollup
+    platform: linux/amd64
+    env_file:
+      - ../.env.develop
+    restart: always
+    build:
+      context: ..
+      dockerfile: build/Dockerfile.rollup

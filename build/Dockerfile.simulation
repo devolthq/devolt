@@ -25,7 +25,7 @@ ARG TARGETARCH
 # source code into the container.
 RUN --mount=type=cache,target=/go/pkg/mod/ \
     --mount=type=bind,target=. \
-    CGO_ENABLED=1 GOARCH=$TARGETARCH go build -tags musl -ldflags '-extldflags "-static"' -o /bin/server /src/cmd/simulation/main.go
+    CGO_ENABLED=1 GOARCH=$TARGETARCH go build -tags musl -ldflags '-extldflags "-static"' -o /bin/server ./cmd/simulation/main.go
 
 ## Copy the private key to the container at build stage
 COPY ./private_key.pem /bin/private_key.pem
