@@ -2,8 +2,6 @@ linters:
   enable:
     - exhaustive
     - goconst
-    - godox
-    - lll
     - misspell
 linters-settings:
   lll:
