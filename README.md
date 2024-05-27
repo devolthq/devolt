@@ -3,6 +3,7 @@
 - [ ] Tests;
 - [ ] Create repository and usecase to create process with looping simulating the device;
 - [ ] Create event directory to manage kafka interface with usecase, [reference](https://github.com/devfullcycle/goexpert/tree/main/20-CleanArch);
+- [ ] Create contracts repository and create submodule with path to third_party;
 - [ ] Actualize all GetEnvs to LookupEnv;
 - [ ] Docs with starlight;
 - [ ] README.md with business part and also all entrypoints;
