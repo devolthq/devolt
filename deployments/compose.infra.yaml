@@ -82,5 +82,5 @@ services:
       retries: 20
     restart: always
     volumes:
-      - ../database/mongodb:/docker-entrypoint-initdb.d
+      - ../database:/docker-entrypoint-initdb.d
       - mongodb-data:/data/db
