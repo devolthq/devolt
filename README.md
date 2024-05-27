@@ -1,5 +1,4 @@
 # Roadmap
-<!-- 
 - [ ] Rollup with cartesi;
 - [ ] Tests;
 - [ ] Create repository and usecase to create process with looping simulating the device;
@@ -27,4 +26,3 @@
 ## Mainnet Step
 - [ ] Cloud support with pulumi, aws, hivemq-cloud and confluent cloud;
 - [ ] Use Confluent Cloud and HiveMQ Cloud;
--->
