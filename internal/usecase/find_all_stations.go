@@ -1,32 +1,38 @@
 package usecase
 
 import (
-	"github.com/devolthq/devolt/internal/domain/dto"
 	"github.com/devolthq/devolt/internal/domain/entity"
 )
 
-type FindAllDevicesUseCase struct {
-	DeviceRepository entity.DeviceRepository
+type FindAllStationsOutputDTO []*FindStationByIdOutputDTO
+
+type FindAllStationsUseCase struct {
+	StationReposiory entity.StationRepository
 }
 
-func NewFindAllDevicesUseCase(deviceRepository entity.DeviceRepository) *FindAllDevicesUseCase {
-	return &FindAllDevicesUseCase{DeviceRepository: deviceRepository}
+func NewFindAllStationsUseCase(stationRepository entity.StationRepository) *FindAllStationsUseCase {
+	return &FindAllStationsUseCase{
+		StationReposiory: stationRepository,
+	}
 }
 
-func (f *FindAllDevicesUseCase) Execute() ([]*dto.FindAllDevicesOutputDTO, error) {
-	devices, err := f.DeviceRepository.FindAllDevices()
+func (c *FindAllStationsUseCase) Execute() (*FindAllStationsOutputDTO, error) {
+	res, err := c.StationReposiory.FindAllStations()
 	if err != nil {
 		return nil, err
 	}
-	var output []*dto.FindAllDevicesOutputDTO
-	for _, device := range devices {
-		output = append(output, &dto.FindAllDevicesOutputDTO{
-			Device_ID: device.Device_ID,
-			Owner:     device.Owner,
-			Latitude:  device.Latitude,
-			Longitude: device.Longitude,
-			Params:    device.Params,
-		})
+	output := make(FindAllStationsOutputDTO, len(res))
+	for i, station := range res {
+		output[i] = &FindStationByIdOutputDTO{
+			Id:        station.Id,
+			Rate:      station.Rate,
+			Owner:     station.Owner,
+			State:     station.State,
+			Latitude:  station.Latitude,
+			Longitude: station.Longitude,
+			CreatedAt: station.CreatedAt,
+			UpdatedAt: station.UpdatedAt,
+		}
 	}
-	return output, nil
+	return &output, nil
 }

@@ -1,22 +1,18 @@
 package main
 
 import (
-	"context"
 	"crypto/ecdsa"
 	"crypto/rand"
-	"crypto/x509"
 	"encoding/json"
-	"encoding/pem"
 	"fmt"
 	ckafka "github.com/confluentinc/confluent-kafka-go/v2/kafka"
-	"github.com/devolthq/devolt/internal/domain/dto"
+	"github.com/devolthq/devolt/configs"
 	"github.com/devolthq/devolt/internal/domain/entity"
 	"github.com/devolthq/devolt/internal/infra/kafka"
 	"github.com/devolthq/devolt/internal/infra/repository"
 	"github.com/devolthq/devolt/internal/usecase"
+	"github.com/devolthq/devolt/internal/usecase/dto"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"os"
 	"sync"
@@ -24,21 +20,13 @@ import (
 )
 
 func main() {
-	//////////////////////// MongoDB //////////////////////////
-	options := options.Client().ApplyURI(
-		fmt.Sprintf("mongodb://%s:%s@%s/?retryWrites=true&connectTimeoutMS=10000&authSource=admin&authMechanism=SCRAM-SHA-1&ssl=false",
-			os.Getenv("MONGODB_USERNAME"),
-			os.Getenv("MONGODB_PASSWORD"),
-			os.Getenv("MONGODB_CLUSTER_HOSTNAME")))
-	client, err := mongo.Connect(context.TODO(), options)
+	//////////////////////// Configs //////////////////////////
+
+	client, err := configs.SetupMongoDB()
 	if err != nil {
 		log.Fatalf("Failed to connect to MongoDB: %v", err)
 	}
 
-	err = client.Ping(context.TODO(), nil)
-	if err != nil {
-		log.Fatal(err)
-	}
 	////////////////////////// Kafka Consumer //////////////////////////
 
 	consumerConfigMap := &ckafka.ConfigMap{
@@ -53,19 +41,9 @@ func main() {
 
 	////////////////////// Load .PEM Private Key //////////////////////
 
-	privateKeyPemData, err := os.ReadFile("./private_key.pem")
+	privateKey, err := configs.ECDSAPrivateKey()
 	if err != nil {
-		panic(err)
-	}
-
-	block, _ := pem.Decode(privateKeyPemData)
-	if block == nil {
-		panic("Falha ao decodificar o bloco PEM")
-	}
-
-	privateKey, err := x509.ParseECPrivateKey(block.Bytes)
-	if err != nil {
-		panic(err)
+		log.Fatalf("Failed to load private key: %v", err)
 	}
 
 	///////////////////////// Repositiories ///////////////////////////
@@ -83,20 +61,21 @@ func main() {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
-	go func(devices []*dto.FindAllDevicesOutputDTO) {
+	go func(devices []*usecase.FindAllDevicesOutputDTO) {
 		defer wg.Done()
 		for _, device := range devices {
 			log.Printf("Starting device: %v", device)
-			go func(device *dto.FindAllDevicesOutputDTO) {
-				opts := MQTT.NewClientOptions().AddBroker(fmt.Sprintf("tcp://%s:%s", os.Getenv("BROKER_URL"), os.Getenv("BROKER_PORT"))).SetClientID(device.Device_ID)
+			// TODO: create an usecase for this instead duplicate the code
+			go func(device *usecase.FindAllDevicesOutputDTO) {
+				opts := MQTT.NewClientOptions().AddBroker(fmt.Sprintf("tcp://%s:%s", os.Getenv("BROKER_URL"), os.Getenv("BROKER_PORT"))).SetClientID(device.DeviceId)
 				client := MQTT.NewClient(opts)
 				if session := client.Connect(); session.Wait() && session.Error() != nil {
 					log.Fatalf("Failed to connect to MQTT broker: %v", session.Error())
 				}
 				for {
 					payload, err := entity.NewPayload(
-						device.Device_ID,
-						device.Owner,
+						device.DeviceId,
+						device.Wallet,
 						device.Params,
 						device.Latitude,
 						device.Longitude,
@@ -107,7 +86,7 @@ func main() {
 
 					jsonBytesPayload, err := json.Marshal(payload)
 					if err != nil {
-						log.Fatalf("Error converting to JSON: %v", err)
+						log.Fatalf("Error converting payload to JSON: %v", err)
 					}
 
 					r, s, err := ecdsa.Sign(rand.Reader, privateKey, jsonBytesPayload)
@@ -115,7 +94,7 @@ func main() {
 						log.Fatalf("Failed to sign payload: %v", err)
 					}
 
-					signedData := dto.SignedDataInputDTO{
+					signedData := dto.DeviceSignedDataDTO{
 						R:       r,
 						S:       s,
 						Payload: jsonBytesPayload,
@@ -123,11 +102,21 @@ func main() {
 
 					jsonBytesSignedData, err := json.Marshal(signedData)
 					if err != nil {
-						log.Fatalf("Error converting to JSON: %v", err)
+						log.Fatalf("Error converting signed data to JSON: %v", err)
 					}
 
-					token := client.Publish(os.Getenv("BROKER_TOPIC"), 1, false, jsonBytesSignedData)
-					log.Printf("Published: %s, on topic: %s", jsonBytesSignedData, os.Getenv("BROKER_TOPIC"))
+					deviceInputData := dto.RollupPayloadInputDTO{
+						Kind:    "DeviceReport",
+						Payload: jsonBytesSignedData,
+					}
+
+					jsonBytesDeviceInputData, err := json.Marshal(deviceInputData)
+					if err != nil {
+						log.Fatalf("Error converting device input data to JSON: %v", err)
+					}
+
+					token := client.Publish(os.Getenv("BROKER_TOPIC"), 1, false, jsonBytesDeviceInputData)
+					log.Printf("Published: %s, on topic: %s", jsonBytesDeviceInputData, os.Getenv("BROKER_TOPIC"))
 					token.Wait()
 					time.Sleep(120 * time.Second)
 				}
@@ -137,6 +126,7 @@ func main() {
 	wg.Wait()
 
 	//////////////////////// Kafka Consumer ////////////////////////
+
 	go func() {
 		if err := kafkaRepository.Consume(msgChan); err != nil {
 			log.Printf("Error consuming kafka queue: %v", err)
@@ -146,22 +136,22 @@ func main() {
 	//////////////////////// Devices From Kafka ////////////////////////
 
 	for msg := range msgChan {
-		raw := dto.CreateDeviceOutputDTO{}
+		raw := usecase.CreateDeviceOutputDTO{}
 		err := json.Unmarshal(msg.Value, &raw)
 		if err != nil {
 			log.Println("Error unmarshalling JSON into type:", err)
 		}
 		log.Printf("Starting device: %v", raw)
-		go func(raw dto.CreateDeviceOutputDTO) {
-			opts := MQTT.NewClientOptions().AddBroker(fmt.Sprintf("tcp://%s:%s", os.Getenv("BROKER_URL"), os.Getenv("BROKER_PORT"))).SetClientID(raw.Device_ID)
+		go func(raw usecase.CreateDeviceOutputDTO) {
+			opts := MQTT.NewClientOptions().AddBroker(fmt.Sprintf("tcp://%s:%s", os.Getenv("BROKER_URL"), os.Getenv("BROKER_PORT"))).SetClientID(raw.DeviceId)
 			client := MQTT.NewClient(opts)
 			if session := client.Connect(); session.Wait() && session.Error() != nil {
 				log.Fatalf("Failed to connect to MQTT broker: %v", session.Error())
 			}
 			for {
 				payload, err := entity.NewPayload(
-					raw.Device_ID,
-					raw.Owner,
+					raw.DeviceId,
+					raw.Wallet,
 					raw.Params,
 					raw.Latitude,
 					raw.Longitude,
@@ -180,7 +170,7 @@ func main() {
 					log.Fatalf("Failed to sign payload: %v", err)
 				}
 
-				signedData := dto.SignedDataInputDTO{
+				signedData := dto.DeviceSignedDataDTO{
 					R:       r,
 					S:       s,
 					Payload: jsonBytesPayload,
@@ -188,11 +178,21 @@ func main() {
 
 				jsonBytesSignedData, err := json.Marshal(signedData)
 				if err != nil {
-					log.Fatalf("Error converting to JSON: %v", err)
+					log.Fatalf("Error converting signed data to JSON: %v", err)
 				}
 
-				token := client.Publish(os.Getenv("BROKER_TOPIC"), 1, false, jsonBytesSignedData)
-				log.Printf("Published: %s, on topic: %s", jsonBytesSignedData, os.Getenv("BROKER_TOPIC"))
+				deviceInputData := dto.RollupPayloadInputDTO{
+					Kind:    "DeviceReport",
+					Payload: jsonBytesSignedData,
+				}
+
+				jsonBytesDeviceInputData, err := json.Marshal(deviceInputData)
+				if err != nil {
+					log.Fatalf("Error converting device input data to JSON: %v", err)
+				}
+
+				token := client.Publish(os.Getenv("BROKER_TOPIC"), 1, false, jsonBytesDeviceInputData)
+				log.Printf("Published: %s, on topic: %s", jsonBytesDeviceInputData, os.Getenv("BROKER_TOPIC"))
 				token.Wait()
 				time.Sleep(120 * time.Second)
 			}

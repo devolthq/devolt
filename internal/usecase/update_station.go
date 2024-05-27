@@ -5,46 +5,56 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-type CreateStationInputDTO struct {
-	Rate      float64        `json:"rate"`
-	Owner     common.Address `json:"owner"`
-	State     string         `json:"state"`
-	Latitude  float64        `json:"latitude"`
-	Longitude float64        `json:"longitude"`
-	CreatedAt int64          `json:"created_at"`
-}
-
-type CreateStationOutputDTO struct {
+type UpdateStationInputDTO struct {
 	Id        int            `json:"id"`
 	Rate      float64        `json:"rate"`
 	Owner     common.Address `json:"owner"`
 	State     string         `json:"state"`
 	Latitude  float64        `json:"latitude"`
 	Longitude float64        `json:"longitude"`
-	CreatedAt int64          `json:"created_at"`
+	UpdatedAt int64          `json:"updated_at"`
 }
 
-type CreateStationUseCase struct {
+type UpdateStationOutputDTO struct {
+	Id        int            `json:"id"`
+	Rate      float64        `json:"rate"`
+	Owner     common.Address `json:"owner"`
+	State     string         `json:"state"`
+	Latitude  float64        `json:"latitude"`
+	Longitude float64        `json:"longitude"`
+	UpdatedAt int64          `json:"updated_at"`
+}
+
+type UpdateStationUseCase struct {
 	StationRepository entity.StationRepository
 }
 
-func NewCreateStationUseCase(stationRepository entity.StationRepository) *CreateStationUseCase {
-	return &CreateStationUseCase{StationRepository: stationRepository}
+func NewUpdateStationUseCase(stationRepository entity.StationRepository) *UpdateStationUseCase {
+	return &UpdateStationUseCase{
+		StationRepository: stationRepository,
+	}
 }
 
-func (u *CreateStationUseCase) CreateStation(input *CreateStationInputDTO) (*CreateStationOutputDTO, error) {
-	station := entity.NewStation(input.Rate, input.Owner, input.Latitude, input.Longitude, input.State, input.CreatedAt)
-	res, err := u.StationRepository.CreateStation(station)
+func (u *UpdateStationUseCase) Execute(input *UpdateStationInputDTO) (*UpdateStationOutputDTO, error) {
+	res, err := u.StationRepository.UpdateStation(&entity.Station{
+		Id:        input.Id,
+		Rate:      input.Rate,
+		Owner:     input.Owner,
+		State:     input.State,
+		Latitude:  input.Latitude,
+		Longitude: input.Longitude,
+		UpdatedAt: input.UpdatedAt,
+	})
 	if err != nil {
 		return nil, err
 	}
-	return &CreateStationOutputDTO{
+	return &UpdateStationOutputDTO{
 		Id:        res.Id,
 		Rate:      res.Rate,
 		Owner:     res.Owner,
 		State:     res.State,
 		Latitude:  res.Latitude,
 		Longitude: res.Longitude,
-		CreatedAt: res.CreatedAt,
+		UpdatedAt: res.UpdatedAt,
 	}, nil
 }

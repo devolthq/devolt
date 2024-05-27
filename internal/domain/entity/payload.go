@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"github.com/ethereum/go-ethereum/common"
 	"gonum.org/v1/gonum/stat"
 	"log"
 	"math"
@@ -9,11 +10,11 @@ import (
 )
 
 type Payload struct {
-	Device_ID string  `json:"device_id"`
-	Owner     string  `json:"owner"`
-	Rate      float64 `json:"rate"`
-	Latitude  float64 `json:"latitude"`
-	Longitude float64 `json:"longitude"`
+	DeviceId  string         `json:"device_id"`
+	Wallet    common.Address `json:"owner"`
+	Rate      float64        `json:"rate"`
+	Latitude  float64        `json:"latitude"`
+	Longitude float64        `json:"longitude"`
 }
 
 func EntropyWithConfidenceInterval(min float64, max float64, z float64) float64 {
@@ -39,19 +40,19 @@ func EntropyWithConfidenceInterval(min float64, max float64, z float64) float64 
 	return math.Round(rand.Float64()*(a-b) + b)
 }
 
-func NewPayload(device_id string, owner string, params map[string]interface{}, latitude float64, longitude float64) (*Payload, error) {
+func NewPayload(deviceId string, wallet common.Address, params map[string]interface{}, latitude float64, longitude float64) (*Payload, error) {
 	min, ok := params["min"].(float64)
 	if !ok {
-		log.Fatalf("min value not found or not a float64: %v", params["min"])
+		log.Fatalf("Min value not found or not a float64: %v", params["min"])
 	}
 	max, ok := params["max"].(float64)
 	if !ok {
-		log.Fatalf("max value not found or not a float64: %v", params["max"])
+		log.Fatalf("Max value not found or not a float64: %v", params["max"])
 	}
 	rate := EntropyWithConfidenceInterval(min, max, 1.96) // 95% confidence interval with z = 1.96 (https://en.wikipedia.org/wiki/Standard_normal_table)
 	return &Payload{
-		Device_ID: device_id,
-		Owner:     owner,
+		DeviceId:  deviceId,
+		Wallet:    wallet,
 		Rate:      rate,
 		Latitude:  latitude,
 		Longitude: longitude,

@@ -63,8 +63,6 @@ EOF
 
 WORKDIR /var/opt/cartesi-app
 
-RUN chown -R dapp:dapp .
-
 ENV PATH="/opt/cartesi/bin:${PATH}"
 
 ## TODO: Is there a way to not copy the public key?

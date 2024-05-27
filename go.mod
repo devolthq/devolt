@@ -9,6 +9,8 @@ require (
 	github.com/gin-contrib/cors v1.7.2
 	github.com/gin-gonic/gin v1.9.1
 	github.com/google/uuid v1.3.0
+	github.com/holiman/uint256 v1.2.4
+	github.com/jmoiron/sqlx v1.4.0
 	github.com/machinefi/w3bstream v1.6.4
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/rollmelette/rollmelette v0.1.1
@@ -51,7 +53,6 @@ require (
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/golang/snappy v0.0.5-0.20220116011046-fa5810519dcb // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
-	github.com/holiman/uint256 v1.2.4 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.17.8 // indirect

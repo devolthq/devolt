@@ -1,9 +1,13 @@
 package dto
 
-import "math/big"
+import (
+	"math/big"
+)
 
-type SignedDataInputDTO struct {
+type DeviceSignedDataDTO struct {
 	R       *big.Int `json:"r"`
 	S       *big.Int `json:"s"`
 	Payload []byte   `json:"payload"`
 }
+
+

@@ -1,21 +1,17 @@
 package main
 
 import (
-	"context"
-	"fmt"
 	ckafka "github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	_ "github.com/devolthq/devolt/api"
+	"github.com/devolthq/devolt/configs"
+	"github.com/devolthq/devolt/internal/infra/web/handler"
+	// "github.com/devolthq/devolt/internal/infra/web/middleware"
 	"github.com/devolthq/devolt/internal/infra/kafka"
 	"github.com/devolthq/devolt/internal/infra/repository"
-	"github.com/devolthq/devolt/internal/infra/web/handler"
-	"github.com/devolthq/devolt/internal/infra/web/middleware"
-	"github.com/devolthq/devolt/internal/usecase"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	_ "github.com/devolthq/devolt/api"
 	"github.com/swaggo/files"
 	"github.com/swaggo/gin-swagger"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"os"
 )
@@ -37,19 +33,9 @@ import (
 // 	@query.collection.format multi
 
 func main() {
-	options := options.Client().ApplyURI(
-		fmt.Sprintf("mongodb://%s:%s@%s/?retryWrites=true&connectTimeoutMS=10000&authSource=admin&authMechanism=SCRAM-SHA-1&ssl=false",
-			os.Getenv("MONGODB_USERNAME"),
-			os.Getenv("MONGODB_PASSWORD"),
-			os.Getenv("MONGODB_CLUSTER_HOSTNAME")))
-	client, err := mongo.Connect(context.TODO(), options)
+	client, err := configs.SetupMongoDB()
 	if err != nil {
 		log.Fatalf("Failed to connect to MongoDB: %v", err)
-	}
-
-	err = client.Ping(context.TODO(), nil)
-	if err != nil {
-		log.Fatal(err)
 	}
 
 	producerConfigMap := &ckafka.ConfigMap{
@@ -59,9 +45,7 @@ func main() {
 
 	kafkaRepository := kafka.NewKafkaProducer(producerConfigMap)
 	deviceRepository := repository.NewDeviceRepositoryMongo(client, "mongodb", "devices")
-	findAllDevicesUseCase := usecase.NewFindAllDevicesUseCase(deviceRepository)
-	createDeviceUseCase := usecase.NewCreateDeviceUseCase(deviceRepository)
-	deviceHandlers := handler.NewDeviceHandlers(findAllDevicesUseCase, createDeviceUseCase, kafkaRepository)
+	deviceHandlers := handler.NewDeviceHandlers(deviceRepository, kafkaRepository)
 
 	router := gin.Default()
 	router.Use(gin.Logger())
@@ -74,19 +58,20 @@ func main() {
 	}))
 
 	api := router.Group("/api/v1")
-	api.Use(middleware.AuthMiddleware())
+	// api.Use(middleware.AuthMiddleware())
 
 	///////////// Healthcheck and Swagger ///////////////
 
 	//TODO: "http://localhost:8083/api/healthz" is the best pattern for healthcheck?
 
-	router.GET("/api/v1/healthz", handler.HealthCheckHandler)
-	
+	api.GET("/healthz", handler.HealthCheckHandler)
+
 	///////////////////// Swagger //////////////////////
-	
+
 	api.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	///////////////////// Devices //////////////////////
+	
 	{
 		deviceGroup := api.Group("/device")
 		{

@@ -1,22 +1,24 @@
 package entity
 
+import "github.com/ethereum/go-ethereum/common"
+
 type DeviceRepository interface {
 	CreateDevice(device *Device) error
 	FindAllDevices() ([]*Device, error)
 }
 
 type Device struct {
-	Device_ID string                 `json:"device_id"`
-	Owner     string                 `json:"owner"`
+	DeviceId  string                 `json:"device_id"`
+	Wallet    common.Address                 `json:"wallet"`
 	Latitude  float64                `json:"latitude"`
 	Longitude float64                `json:"longitude"`
 	Params    map[string]interface{} `json:"params"`
 }
 
-func NewDevice(device_id string, owner string, latitude float64, longitude float64, params map[string]interface{}) *Device {
+func NewDevice(deviceId string, wallet common.Address, latitude float64, longitude float64, params map[string]interface{}) *Device {
 	return &Device{
-		Device_ID: device_id,
-		Owner:     owner,
+		DeviceId:  deviceId,
+		Wallet:    wallet,
 		Latitude:  latitude,
 		Longitude: longitude,
 		Params:    params,

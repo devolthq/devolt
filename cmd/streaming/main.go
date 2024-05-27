@@ -1,14 +1,11 @@
 package main
 
 import (
-	"context"
 	ckafka "github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/devolthq/devolt/internal/infra/kafka"
 	"github.com/devolthq/devolt/pkg/rollups-contracts"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/devolthq/devolt/configs"
 	"log"
 	"os"
 )
@@ -26,23 +23,8 @@ func main() {
 	}
 
 	///////////////////// Blockchain Config //////////////////////
-
-	client, err := ethclient.Dial(os.Getenv("TESTNET_RPC_URL"))
-	if err != nil {
-		log.Fatalf("Failed to connect to blockchain: %v", err)
-	}
-
-	chainId, err := client.NetworkID(context.Background())
-	if err != nil {
-		log.Fatalf("Failed to get chain ID: %v", err)
-	}
-
-	privateKey, err := crypto.HexToECDSA(os.Getenv("TESTNET_PRIVATE_KEY"))
-	if err != nil {
-		log.Fatalf("Failed to parse private key: %v", err)
-	}
-
-	opts, err := bind.NewKeyedTransactorWithChainID(privateKey, chainId)
+	
+	client, opts, err := configs.SetupTransactor()
 	if err != nil {
 		log.Fatalf("Failed to create transactor: %v", err)
 	}

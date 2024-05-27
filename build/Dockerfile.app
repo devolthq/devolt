@@ -25,7 +25,7 @@ ARG TARGETARCH
 # source code into the container.
 RUN --mount=type=cache,target=/go/pkg/mod/ \
     --mount=type=bind,target=. \
-    CGO_ENABLED=1 GOARCH=$TARGETARCH go build -tags musl -ldflags '-extldflags "-static"' -o /bin/server ./cmd/api-server/main.go
+    CGO_ENABLED=1 GOARCH=$TARGETARCH go build -tags musl -ldflags '-extldflags "-static"' -o /bin/server ./cmd/app/main.go
 
 ################################################################################
 # Create a new stage for running the application that contains the minimal
