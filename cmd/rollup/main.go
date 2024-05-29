@@ -2,12 +2,17 @@ package main
 
 import (
 	"context"
+	"crypto/ecdsa"
 	// "crypto/ecdsa"
 	"encoding/json"
 	"fmt"
 	"log"
 	"log/slog"
+
 	"github.com/devolthq/devolt/configs"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/jmoiron/sqlx"
+
 	// "github.com/ethereum/go-ethereum/common"
 	// "github.com/devolthq/devolt/internal/domain/entity"
 	// "github.com/devolthq/devolt/internal/infra/repository"
@@ -16,10 +21,18 @@ import (
 	"github.com/rollmelette/rollmelette"
 )
 
-type DeVoltRollup struct{}
+type DeVoltRollup struct{
+	State *sqlx.DB
+	Admin *common.Address
+	PublicKey *ecdsa.PublicKey
+}
 
-func NewDeVoltRollup() *DeVoltRollup {
-	return &DeVoltRollup{}
+func NewDeVoltRollup(state *sqlx.DB, admin *common.Address, publicKey *ecdsa.PublicKey) *DeVoltRollup {
+	return &DeVoltRollup{
+		State: state,
+		Admin: admin,
+		PublicKey: publicKey,
+	}
 }
 
 func (a *DeVoltRollup) Advance(
@@ -28,22 +41,11 @@ func (a *DeVoltRollup) Advance(
 	deposit rollmelette.Deposit,
 	payload []byte,
 ) error {
-	//////////////////////// Configs //////////////////////////
-	_, err := configs.ECDSAPublicKey()
-	if err != nil {
-		return fmt.Errorf("failed to get public key: %w", err)
-	}
-
-	db, err := configs.SetupSQLite()
-	if err != nil {
-		log.Fatalf("Failed to open and connect to database: %v", err)
-	}
-	defer db.Close()
-
+	
 	//////////////////////// Decode Input ////////////////////////
 	// TODO: Replace this approach to Cap’n Proto
 	var input *dto.RollupPayloadInputDTO
-	err = json.Unmarshal(payload, &input)
+	err := json.Unmarshal(payload, &input)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal input payload: %w", err)
 	}
@@ -70,10 +72,23 @@ func (a *DeVoltRollup) Inspect(env rollmelette.EnvInspector, payload []byte) err
 }
 
 func main() {
+	//////////////////////// Configs //////////////////////////
+	publicKey, err := configs.ECDSAPublicKey()
+	if err != nil {
+		slog.Error("failed to get public key", "error", err)
+	}
+
+	db, err := configs.SetupSQLite()
+	if err != nil {
+		log.Fatalf("Failed to open and connect to database: %v", err)
+	}
+
+	admin := common.HexToAddress("0x0000000000000000000000000000000000000000")
+	///////////////////////// Rollmelette //////////////////////////
 	ctx := context.Background()
 	opts := rollmelette.NewRunOpts()
-	app := NewDeVoltRollup()
-	err := rollmelette.Run(ctx, opts, app)
+	app := NewDeVoltRollup(db, &admin, publicKey)
+	err = rollmelette.Run(ctx, opts, app)
 	if err != nil {
 		slog.Error("application error", "error", err)
 	}
