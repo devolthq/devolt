@@ -6,7 +6,7 @@ import (
 )
 
 type UpdateStationInputDTO struct {
-	Id        int            `json:"id"`
+	Id        string         `json:"id"`
 	Rate      float64        `json:"rate"`
 	Owner     common.Address `json:"owner"`
 	State     string         `json:"state"`
@@ -16,7 +16,7 @@ type UpdateStationInputDTO struct {
 }
 
 type UpdateStationOutputDTO struct {
-	Id        int            `json:"id"`
+	Id        string         `json:"id"`
 	Rate      float64        `json:"rate"`
 	Owner     common.Address `json:"owner"`
 	State     string         `json:"state"`

@@ -97,7 +97,7 @@ func main() {
 					signedData := dto.DeviceSignedDataDTO{
 						R:       r,
 						S:       s,
-						Payload: jsonBytesPayload,
+						DevicePayload: jsonBytesPayload,
 					}
 
 					jsonBytesSignedData, err := json.Marshal(signedData)
@@ -173,7 +173,7 @@ func main() {
 				signedData := dto.DeviceSignedDataDTO{
 					R:       r,
 					S:       s,
-					Payload: jsonBytesPayload,
+					DevicePayload: jsonBytesPayload,
 				}
 
 				jsonBytesSignedData, err := json.Marshal(signedData)

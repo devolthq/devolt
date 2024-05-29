@@ -9,7 +9,7 @@ type DeviceRepository interface {
 
 type Device struct {
 	DeviceId  string                 `json:"device_id"`
-	Wallet    common.Address                 `json:"wallet"`
+	Wallet    common.Address         `json:"wallet"`
 	Latitude  float64                `json:"latitude"`
 	Longitude float64                `json:"longitude"`
 	Params    map[string]interface{} `json:"params"`

@@ -7,7 +7,7 @@ import (
 type DeviceSignedDataDTO struct {
 	R       *big.Int `json:"r"`
 	S       *big.Int `json:"s"`
-	Payload []byte   `json:"payload"`
+	DevicePayload []byte   `json:"payload"`
 }
 
 

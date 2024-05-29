@@ -13,13 +13,13 @@ type AuctionRepository interface {
 }
 
 type Auction struct {
-	Id         int         `json:"id"`
-	Credits    uint256.Int `json:"credits"`
-	PriceLimit uint256.Int `json:"price_limit"`
-	State      string      `json:"state"`
-	ExpiresAt  int64       `json:"expires_at"`
-	CreatedAt  int64       `json:"created_at"`
-	UpdatedAt  int64       `json:"updated_at"`
+	Id         int         `json:"id" db:"id"`
+	Credits    uint256.Int `json:"credits" db:"credits"`
+	PriceLimit uint256.Int `json:"price_limit" db:"price_limit"`
+	State      string      `json:"state" db:"state"`
+	ExpiresAt  int64       `json:"expires_at" db:"expires_at"`
+	CreatedAt  int64       `json:"created_at" db:"created_at"`
+	UpdatedAt  int64       `json:"updated_at" db:"updated_at"`
 }
 
 func NewAuction(credits uint256.Int, priceLimit uint256.Int, state string, expires_at int64, createdAt int64) *Auction {

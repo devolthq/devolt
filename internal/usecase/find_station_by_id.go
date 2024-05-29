@@ -6,11 +6,11 @@ import (
 )
 
 type FindStationByIdInputDTO struct {
-	Id int `json:"id"`
+	Id string `json:"id"`
 }
 
 type FindStationByIdOutputDTO struct {
-	Id        int            `json:"id"`
+	Id        string            `json:"id"`
 	Rate      float64        `json:"rate"`
 	Owner     common.Address `json:"owner"`
 	State     string         `json:"state"`

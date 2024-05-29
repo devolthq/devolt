@@ -19,7 +19,8 @@ func NewStationRepositorySqlite(db *sqlx.DB) *StationRepositorySqlite {
 func (s *StationRepositorySqlite) CreateStation(input *entity.Station) (*entity.Station, error) {
 	var station entity.Station
 	err := s.Db.QueryRow(
-		"INSERT INTO stations (rate, owner, state, latitude, longitude) VALUES ($1, $2, $3, $4, $5) RETURNING id, rate, owner, state, latitude, longitude, created_at, updated_at",
+		"INSERT INTO stations (id, rate, owner, state, latitude, longitude) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, rate, owner, state, latitude, longitude, created_at",
+		input.Id,
 		station.Rate,
 		station.Owner.String(),
 		station.State,
@@ -33,7 +34,6 @@ func (s *StationRepositorySqlite) CreateStation(input *entity.Station) (*entity.
 		&station.Latitude,
 		&station.Longitude,
 		&station.CreatedAt,
-		&station.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -41,7 +41,7 @@ func (s *StationRepositorySqlite) CreateStation(input *entity.Station) (*entity.
 	return &station, err
 }
 
-func (s *StationRepositorySqlite) FindStationById(id int) (*entity.Station, error) {
+func (s *StationRepositorySqlite) FindStationById(id string) (*entity.Station, error) {
 	var station entity.Station
 	err := s.Db.Get(&station, "SELECT * FROM stations WHERE id = $1", id)
 	if err != nil {
@@ -85,7 +85,7 @@ func (s *StationRepositorySqlite) UpdateStation(input *entity.Station) (*entity.
 	return &station, err
 }
 
-func (s *StationRepositorySqlite) DeleteStation(id int) error {
+func (s *StationRepositorySqlite) DeleteStation(id string) error {
 	_, err := s.Db.Exec("DELETE FROM stations WHERE id = $1", id)
 	if err != nil {
 		return err

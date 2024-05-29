@@ -62,6 +62,15 @@ iot:
 		--env-file ./.env.develop \
 		up app simulation streaming --build
 	$(END_LOG)
+
+.PHONY: app
+app:
+	$(START_LOG)
+	@docker compose \
+		-f ./deployments/compose.packages.yaml \
+		--env-file ./.env.develop \
+		up app --build
+	$(END_LOG)
 	
 .PHONY: generate
 generate:

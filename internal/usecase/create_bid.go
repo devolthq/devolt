@@ -8,9 +8,9 @@ import (
 
 type CreateBidInputDTO struct {
 	AuctionId int     `json:"auction_id"`
-	Bidder    string  `json:"bidder"`
-	Credits   float64 `json:"credits"`
-	Price     float64 `json:"price"`
+	Bidder    common.Address  `json:"bidder"`
+	Credits   uint256.Int `json:"credits"`
+	Price     uint256.Int `json:"price"`
 	State     string  `json:"state"`
 	CreatedAt int64   `json:"created_at"`
 }
@@ -35,7 +35,7 @@ func NewCreateBidUseCase(bidRepository entity.BidRepository) *CreateBidUseCase {
 	}
 }
 
-func (c *CreateBidUseCase) CreateBid(input *entity.Bid) (*CreateBidOutputDTO, error) {
+func (c *CreateBidUseCase) Execute(input *CreateBidInputDTO) (*CreateBidOutputDTO, error) {
 	bid := entity.NewBid(input.Bidder, input.Credits, input.Price, input.State, input.CreatedAt)
 	res, err := c.BidRepository.CreateBid(bid)
 	if err != nil {

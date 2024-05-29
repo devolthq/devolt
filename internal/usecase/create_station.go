@@ -6,6 +6,7 @@ import (
 )
 
 type CreateStationInputDTO struct {
+	Id        string         `json:"id"`
 	Rate      float64        `json:"rate"`
 	Owner     common.Address `json:"owner"`
 	State     string         `json:"state"`
@@ -15,7 +16,7 @@ type CreateStationInputDTO struct {
 }
 
 type CreateStationOutputDTO struct {
-	Id        int            `json:"id"`
+	Id        string         `json:"id"`
 	Rate      float64        `json:"rate"`
 	Owner     common.Address `json:"owner"`
 	State     string         `json:"state"`
@@ -32,7 +33,7 @@ func NewCreateStationUseCase(stationRepository entity.StationRepository) *Create
 	return &CreateStationUseCase{StationRepository: stationRepository}
 }
 
-func (u *CreateStationUseCase) CreateStation(input *CreateStationInputDTO) (*CreateStationOutputDTO, error) {
+func (u *CreateStationUseCase) Execute(input *CreateStationInputDTO) (*CreateStationOutputDTO, error) {
 	station := entity.NewStation(input.Rate, input.Owner, input.Latitude, input.Longitude, input.State, input.CreatedAt)
 	res, err := u.StationRepository.CreateStation(station)
 	if err != nil {

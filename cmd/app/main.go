@@ -38,6 +38,12 @@ func main() {
 		log.Fatalf("Failed to connect to MongoDB: %v", err)
 	}
 
+	db, err := configs.SetupSQLite()
+	if err != nil {
+		log.Fatalf("Failed to connect to SQLite: %v", err)
+	}
+	defer db.Close()
+
 	producerConfigMap := &ckafka.ConfigMap{
 		"bootstrap.servers": os.Getenv("KAFKA_BOOTSTRAP_SERVER"),
 		"client.id":         os.Getenv("KAFKA_CLIENT_ID"),
@@ -46,6 +52,15 @@ func main() {
 	kafkaRepository := kafka.NewKafkaProducer(producerConfigMap)
 	deviceRepository := repository.NewDeviceRepositoryMongo(client, "mongodb", "devices")
 	deviceHandlers := handler.NewDeviceHandlers(deviceRepository, kafkaRepository)
+
+	auctionRepository := repository.NewAuctionRepositorySqlite(db)
+	auctionHandlers := handler.NewAuctionHandlers(auctionRepository)
+
+	bidRepository := repository.NewBidRepositorySqlite(db)
+	bidHandlers := handler.NewBidHandlers(bidRepository)
+
+	stationRepository := repository.NewStationRepositorySqlite(db)
+	stationHandlers := handler.NewStationHandlers(stationRepository)
 
 	router := gin.Default()
 	router.Use(gin.Logger())
@@ -77,6 +92,44 @@ func main() {
 		{
 			deviceGroup.GET("", deviceHandlers.FindAllDevicesHandler)
 			deviceGroup.POST("", deviceHandlers.CreateDeviceHandler)
+		}
+	}
+
+	///////////////////// Auction /////////////////////
+
+	{
+		auctionGroup := api.Group("/auction")
+		{
+			auctionGroup.POST("", auctionHandlers.CreateAuctionHandler)
+			auctionGroup.GET("", auctionHandlers.FindAllAuctionsHandler)
+			auctionGroup.GET("/:id", auctionHandlers.FindAuctionByIdHandler)
+			auctionGroup.PUT("/:id", auctionHandlers.UpdateAuctionHandler)
+			auctionGroup.DELETE("/:id", auctionHandlers.DeleteAuctionHandler)
+		}
+	}
+
+	///////////////////// Bids ///////////////////////
+
+	{
+		bidGroup := api.Group("/bid")
+		{
+			bidGroup.POST("", bidHandlers.CreateBidHandler)
+			bidGroup.GET("", bidHandlers.FindAllBidsHandler)
+			bidGroup.GET("/:id", bidHandlers.FindBidByIdHandler)
+			bidGroup.PUT("/:id", bidHandlers.UpdateBidHandler)
+			bidGroup.DELETE("/:id", bidHandlers.DeleteBidHandler)
+		}
+	}
+
+	///////////////////// Stations /////////////////////
+	{
+		stationGroup := api.Group("/station")
+		{
+			stationGroup.POST("", stationHandlers.CreateStationHandler)
+			stationGroup.GET("", stationHandlers.FindAllStationsHandler)
+			stationGroup.GET("/:id", stationHandlers.FindStationByIdHandler)
+			stationGroup.PUT("/:id", stationHandlers.UpdateStationHandler)
+			stationGroup.DELETE("/:id", stationHandlers.DeleteStationHandler)
 		}
 	}
 

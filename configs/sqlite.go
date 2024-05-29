@@ -13,34 +13,34 @@ func SetupSQLite() (*sqlx.DB, error) {
 	}
 
 	migrations := []string{
-		`CREATE TABLE Auctions (
-			Id INTEGER PRIMARY KEY AUTOINCREMENT,
-			Credits TEXT,
-			PriceLimit TEXT,
-			State TEXT,
-			ExpiresAt INTEGER,
-			CreatedAt INTEGER,
-			UpdatedAt INTEGER
+		`CREATE TABLE auctions (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			credits TEXT,
+			price_limit TEXT,
+			state TEXT,
+			expires_at INTEGER,
+			created_at INTEGER,
+			updated_at INTEGER
 		);`,
-		`CREATE TABLE Bids (
-			Id INTEGER PRIMARY KEY AUTOINCREMENT,
-			AuctionId INTEGER,
-			Bidder TEXT,
-			Credits TEXT,
-			Price TEXT,
-			State TEXT,
-			CreatedAt INTEGER,
-			UpdatedAt INTEGER
+		`CREATE TABLE bids (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			auction_id INTEGER,
+			bidder TEXT,
+			credits TEXT,
+			price TEXT,
+			state TEXT,
+			created_at INTEGER,
+			updated_at INTEGER
 		);`,
-		`CREATE TABLE Stations (
-			Id INTEGER PRIMARY KEY AUTOINCREMENT,
-			Rate REAL,
-			Owner TEXT,
-			State TEXT,
-			Latitude REAL,
-			Longitude REAL,
-			CreatedAt INTEGER,
-			UpdatedAt INTEGER
+		`CREATE TABLE stations (
+			id TEXT PRIMARY KEY NOT NULL,
+			rate REAL,
+			owner TEXT,
+			state TEXT,
+			latitude REAL,
+			longitude REAL,
+			created_at INTEGER,
+			updated_at INTEGER
 		);`,
 	}
 
@@ -50,6 +50,5 @@ func SetupSQLite() (*sqlx.DB, error) {
 			return nil, fmt.Errorf("failed to execute migration: %v", err)
 		}
 	}
-
 	return db, err
 }
