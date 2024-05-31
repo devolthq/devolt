@@ -75,7 +75,7 @@ app:
 .PHONY: generate
 generate:
 	$(START_LOG)
-	@go run ./pkg/ecdsa
+	@go run ./pkg/ecdsa/generate
 	@go run ./pkg/rollups-contracts/generate
 	$(END_LOG)
 

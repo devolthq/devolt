@@ -23,16 +23,16 @@ import (
 
 type DeVoltRollup struct {
 	State                 *sqlx.DB
-	Admins                []*common.Address
+	Owner                 *common.Address
 	TokenAddress          *common.Address
 	DeployerPluginAddress *common.Address
 	PublicKey             *ecdsa.PublicKey
 }
 
-func NewDeVoltRollup(state *sqlx.DB, admins []*common.Address, publicKey *ecdsa.PublicKey) *DeVoltRollup {
+func NewDeVoltRollup(state *sqlx.DB, initialOwner *common.Address, publicKey *ecdsa.PublicKey) *DeVoltRollup {
 	return &DeVoltRollup{
 		State:     state,
-		Admins:    admins,
+		Owner:     initialOwner,
 		PublicKey: publicKey,
 	}
 }
@@ -43,6 +43,7 @@ func (d *DeVoltRollup) Advance(
 	deposit rollmelette.Deposit,
 	payload []byte,
 ) error {
+	fmt.Printf("Raw payload: %s\n", string(payload))
 
 	//////////////////////// Decode Input ////////////////////////
 	// TODO: Replace this approach to Cap’n Proto
@@ -78,16 +79,6 @@ func (d *DeVoltRollup) Advance(
 	updateStationUseCase := usecase.NewUpdateStationUseCase(stationRepository)
 	// deleteStationUseCase := usecase.NewDeleteStationUseCase(stationRepository)
 
-	////////////////////////// Auxiliar Functions //////////////////////////
-	hasRole := func(sender common.Address) bool {
-		for _, v := range d.Admins {
-			if v == &sender {
-				return true
-			}
-		}
-		return false
-	}
-
 	///////////////////////// Router //////////////////////////
 	switch input.Kind {
 	// case "BuyEnergy":
@@ -96,30 +87,21 @@ func (d *DeVoltRollup) Advance(
 	// 	log.Printf("Rolling Sell: %v", string(input.Payload))
 	// case "FinishAuction":
 	// 	log.Printf("Rolling Finish: %v", string(input.Payload))
-	case "TokenAddress":
+	case "tokenAddress":
 		var NewTokenAddress common.Address
 		if err := json.Unmarshal(input.Payload, &NewTokenAddress); err != nil {
 			return fmt.Errorf("failed to unmarshal new token address as address: %w", err)
 		}
-		if hasRole(metadata.MsgSender); !hasRole(metadata.MsgSender) {
-			return fmt.Errorf("sender is not an admin: %v", metadata.MsgSender)
-		}
 		d.TokenAddress = &NewTokenAddress
 		env.Report([]byte(fmt.Sprintf("set token address to: %v", NewTokenAddress)))
-	case "DeployerPluginAddress":
+	case "deployerPluginAddress":
 		var NewDeployerPluginAddress common.Address
 		if err := json.Unmarshal(input.Payload, &NewDeployerPluginAddress); err != nil {
 			return fmt.Errorf("failed to unmarshal new deployer plugin address as address: %w", err)
 		}
-		if hasRole(metadata.MsgSender); !hasRole(metadata.MsgSender) {
-			return fmt.Errorf("sender is not an admin: %v", metadata.MsgSender)
-		}
 		d.DeployerPluginAddress = &NewDeployerPluginAddress
 		env.Report([]byte(fmt.Sprintf("set deployer plugin address to: %v", NewDeployerPluginAddress)))
-	case "DeployContract":
-		if hasRole(metadata.MsgSender); !hasRole(metadata.MsgSender) {
-			return fmt.Errorf("sender is not an admin: %v", metadata.MsgSender)
-		}
+	case "deployContract":
 		abiJson := `[{
 										"inputs":[
 											{
@@ -148,29 +130,23 @@ func (d *DeVoltRollup) Advance(
 			return fmt.Errorf("failed to pack abi: %w", err)
 		}
 		env.Voucher(*d.DeployerPluginAddress, voucher)
-	case "GrantAdminRole":
+	case "grantAdminRole":
+		log.Printf("Rolling GrantAdminRole: %v", string(input.Payload))
 		var NewOwner common.Address
 		if err := json.Unmarshal(input.Payload, &NewOwner); err != nil {
 			return fmt.Errorf("failed to unmarshal new owner as address: %w", err)
 		}
-		if hasRole(metadata.MsgSender); !hasRole(metadata.MsgSender) {
-			return fmt.Errorf("sender is not an admin: %v", metadata.MsgSender)
-		}
-		d.Admins = append(d.Admins, &NewOwner)
+		d.Owner = &NewOwner
 		env.Report([]byte(fmt.Sprintf("granted admin role to: %v", NewOwner)))
-	case "RevokeAdminRole":
-		if hasRole(metadata.MsgSender); !hasRole(metadata.MsgSender) {
-			return fmt.Errorf("sender is not an admin: %v", metadata.MsgSender)
+	case "revokeAdminRole":
+		var remainingOwners common.Address
+		if err := json.Unmarshal(input.Payload, &remainingOwners); err != nil {
+			return fmt.Errorf("failed to unmarshal remaining owners: %w", err)
 		}
-		var remainingOwners []*common.Address
-		for _, v := range d.Admins {
-			if v != &metadata.MsgSender {
-				remainingOwners = append(remainingOwners, v)
-			}
-		}
-		d.Admins = remainingOwners
+		d.Owner = &remainingOwners
 		env.Report([]byte(fmt.Sprintf("revoked admin role from: %v", metadata.MsgSender)))
-	case "DeviceReport":
+	case "deviceReport":
+		log.Printf("Rolling DeviceReport: %v and payload: %v", string(input.Payload), input.Payload)
 		////////////////////////// Decode Report //////////////////////////
 		var report *entity.Report
 		if err := json.Unmarshal(input.Payload, &report); err != nil {
@@ -340,6 +316,14 @@ func (d *DeVoltRollup) Inspect(env rollmelette.EnvInspector, payload []byte) err
 		} else {
 			return fmt.Errorf("invalid payload: %v", payload)
 		}
+	case "admin":
+		if len(parameters) == 1 {
+			allO, err := json.Marshal(d.Owner)
+			if err != nil {
+				return fmt.Errorf("failed to marshal all O: %w", err)
+			}
+			env.Report(allO)
+		}
 	default:
 		return fmt.Errorf("invalid payload: %v", payload)
 	}
@@ -358,16 +342,13 @@ func main() {
 		log.Fatalf("Failed to open and connect to database: %v", err)
 	}
 
-	//////////////////////// Setup State //////////////////////////
-	initialOwner := common.HexToAddress("0x0000000000000000000000000000000000000000")
-
-	var owners []*common.Address
-	owners = append(owners, &initialOwner)
+	//////////////////////// Setup Ownership //////////////////////////
+	initialOwner := common.HexToAddress("0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266")
 
 	///////////////////////// Rollmelette //////////////////////////
 	ctx := context.Background()
 	opts := rollmelette.NewRunOpts()
-	app := NewDeVoltRollup(db, owners, publicKey)
+	app := NewDeVoltRollup(db, &initialOwner, publicKey)
 	err = rollmelette.Run(ctx, opts, app)
 	if err != nil {
 		slog.Error("application error", "error", err)

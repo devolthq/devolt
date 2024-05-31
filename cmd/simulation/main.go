@@ -99,7 +99,7 @@ func main() {
 					
 					// TODO: use capnp instead
 					deviceInputData := dto.AdvaceInputDTO{
-						Kind:    "DeviceReport",
+						Kind:    "deviceReport",
 						Payload: jsonBytesReport,
 					}
 
@@ -170,7 +170,7 @@ func main() {
 				
 				// TODO: use capnp instead
 				deviceInputData := dto.AdvaceInputDTO{
-					Kind:    "DeviceReport",
+					Kind:    "deviceReport",
 					Payload: jsonBytesReport,
 				}
 
