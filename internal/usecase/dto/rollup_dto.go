@@ -1,6 +1,6 @@
 package dto
 
-type RollupPayloadInputDTO struct {
+type AdvaceInputDTO struct {
 	Kind string `json:"kind"`
 	Payload []byte `json:"payload"`
 }

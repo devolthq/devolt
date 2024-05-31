@@ -43,5 +43,6 @@ func (u *FindStationByIdUseCase) Execute(input *FindStationByIdInputDTO) (*FindS
 		Latitude:  res.Latitude,
 		Longitude: res.Longitude,
 		CreatedAt: res.CreatedAt,
+		UpdatedAt: res.UpdatedAt,
 	}, nil
 }

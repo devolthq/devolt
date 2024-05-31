@@ -19,13 +19,14 @@ func NewStationRepositorySqlite(db *sqlx.DB) *StationRepositorySqlite {
 func (s *StationRepositorySqlite) CreateStation(input *entity.Station) (*entity.Station, error) {
 	var station entity.Station
 	err := s.Db.QueryRow(
-		"INSERT INTO stations (id, rate, owner, state, latitude, longitude) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, rate, owner, state, latitude, longitude, created_at",
+		"INSERT INTO stations (id, rate, owner, state, latitude, longitude, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, rate, owner, state, latitude, longitude, created_at",
 		input.Id,
-		station.Rate,
-		station.Owner.String(),
-		station.State,
-		station.Latitude,
-		station.Longitude,
+		input.Rate,
+		input.Owner,
+		input.State,
+		input.Latitude,
+		input.Longitude,
+		input.CreatedAt,
 	).Scan(
 		&station.Id,
 		&station.Rate,
@@ -62,12 +63,13 @@ func (s *StationRepositorySqlite) FindAllStations() ([]*entity.Station, error) {
 func (s *StationRepositorySqlite) UpdateStation(input *entity.Station) (*entity.Station, error) {
 	var station entity.Station
 	err := s.Db.QueryRow(
-		"UPDATE stations SET rate = $1, owner = $2, state = $3, latitude = $4, longitude = $5 WHERE id = $6 RETURNING id, rate, owner, state, latitude, longitude, created_at, updated_at",
+		"UPDATE stations SET rate = $1, owner = $2, state = $3, latitude = $4, longitude = $5, updated_at = $6 WHERE id = $7 RETURNING id, rate, owner, state, latitude, longitude, updated_at",
 		input.Rate,
-		input.Owner.String(),
+		input.Owner,
 		input.State,
 		input.Latitude,
 		input.Longitude,
+		input.UpdatedAt,
 		input.Id,
 	).Scan(
 		&station.Id,
@@ -76,7 +78,6 @@ func (s *StationRepositorySqlite) UpdateStation(input *entity.Station) (*entity.
 		&station.State,
 		&station.Latitude,
 		&station.Longitude,
-		&station.CreatedAt,
 		&station.UpdatedAt,
 	)
 	if err != nil {

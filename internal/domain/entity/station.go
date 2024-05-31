@@ -23,8 +23,9 @@ type Station struct {
 	UpdatedAt int64          `json:"updated_at" db:"updated_at"`
 }
 
-func NewStation(rate float64, owner common.Address, latitude float64, longitude float64, state string, createdAt int64) *Station {
+func NewStation(id string, rate float64, owner common.Address, latitude float64, longitude float64, state string, createdAt int64) *Station {
 	return &Station{
+		Id:        id,
 		Rate:      rate,
 		Owner:     owner,
 		State:     state,

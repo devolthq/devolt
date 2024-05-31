@@ -39,5 +39,6 @@ func (f *FindAuctionByIdUseCase) Execute(input *FindAuctionByIdInputDTO) (*FindA
 		State:      res.State,
 		ExpiresAt:  res.ExpiresAt,
 		CreatedAt:  res.CreatedAt,
+		UpdatedAt:  res.UpdatedAt,
 	}, nil
 }

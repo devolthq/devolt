@@ -34,7 +34,7 @@ func NewCreateStationUseCase(stationRepository entity.StationRepository) *Create
 }
 
 func (u *CreateStationUseCase) Execute(input *CreateStationInputDTO) (*CreateStationOutputDTO, error) {
-	station := entity.NewStation(input.Rate, input.Owner, input.Latitude, input.Longitude, input.State, input.CreatedAt)
+	station := entity.NewStation(input.Id, input.Rate, input.Owner, input.Latitude, input.Longitude, input.State, input.CreatedAt)
 	res, err := u.StationRepository.CreateStation(station)
 	if err != nil {
 		return nil, err

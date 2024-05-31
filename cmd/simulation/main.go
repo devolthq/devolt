@@ -1,8 +1,6 @@
 package main
 
 import (
-	"crypto/ecdsa"
-	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	ckafka "github.com/confluentinc/confluent-kafka-go/v2/kafka"
@@ -89,25 +87,20 @@ func main() {
 						log.Fatalf("Error converting payload to JSON: %v", err)
 					}
 
-					r, s, err := ecdsa.Sign(rand.Reader, privateKey, jsonBytesPayload)
+					report, err := entity.NewReport(privateKey, jsonBytesPayload)
 					if err != nil {
-						log.Fatalf("Failed to sign payload: %v", err)
+						log.Fatalf("Failed to create report: %v", err)
 					}
 
-					signedData := dto.DeviceSignedDataDTO{
-						R:       r,
-						S:       s,
-						DevicePayload: jsonBytesPayload,
-					}
-
-					jsonBytesSignedData, err := json.Marshal(signedData)
+					jsonBytesReport, err := json.Marshal(report)
 					if err != nil {
-						log.Fatalf("Error converting signed data to JSON: %v", err)
+						log.Fatalf("Error converting report to JSON: %v", err)
 					}
-
-					deviceInputData := dto.RollupPayloadInputDTO{
+					
+					// TODO: use capnp instead
+					deviceInputData := dto.AdvaceInputDTO{
 						Kind:    "DeviceReport",
-						Payload: jsonBytesSignedData,
+						Payload: jsonBytesReport,
 					}
 
 					jsonBytesDeviceInputData, err := json.Marshal(deviceInputData)
@@ -142,19 +135,19 @@ func main() {
 			log.Println("Error unmarshalling JSON into type:", err)
 		}
 		log.Printf("Starting device: %v", raw)
-		go func(raw usecase.CreateDeviceOutputDTO) {
-			opts := MQTT.NewClientOptions().AddBroker(fmt.Sprintf("tcp://%s:%s", os.Getenv("BROKER_URL"), os.Getenv("BROKER_PORT"))).SetClientID(raw.DeviceId)
+		go func(device usecase.CreateDeviceOutputDTO) {
+			opts := MQTT.NewClientOptions().AddBroker(fmt.Sprintf("tcp://%s:%s", os.Getenv("BROKER_URL"), os.Getenv("BROKER_PORT"))).SetClientID(device.DeviceId)
 			client := MQTT.NewClient(opts)
 			if session := client.Connect(); session.Wait() && session.Error() != nil {
 				log.Fatalf("Failed to connect to MQTT broker: %v", session.Error())
 			}
 			for {
 				payload, err := entity.NewPayload(
-					raw.DeviceId,
-					raw.Wallet,
-					raw.Params,
-					raw.Latitude,
-					raw.Longitude,
+					device.DeviceId,
+					device.Wallet,
+					device.Params,
+					device.Latitude,
+					device.Longitude,
 				)
 				if err != nil {
 					log.Fatalf("Failed to create payload: %v", err)
@@ -162,28 +155,23 @@ func main() {
 
 				jsonBytesPayload, err := json.Marshal(payload)
 				if err != nil {
-					log.Fatalf("Error converting to JSON: %v", err)
+					log.Fatalf("Error converting payload to JSON: %v", err)
 				}
 
-				r, s, err := ecdsa.Sign(rand.Reader, privateKey, jsonBytesPayload)
+				report, err := entity.NewReport(privateKey, jsonBytesPayload)
 				if err != nil {
-					log.Fatalf("Failed to sign payload: %v", err)
+					log.Fatalf("Failed to create report: %v", err)
 				}
 
-				signedData := dto.DeviceSignedDataDTO{
-					R:       r,
-					S:       s,
-					DevicePayload: jsonBytesPayload,
-				}
-
-				jsonBytesSignedData, err := json.Marshal(signedData)
+				jsonBytesReport, err := json.Marshal(report)
 				if err != nil {
-					log.Fatalf("Error converting signed data to JSON: %v", err)
+					log.Fatalf("Error converting report to JSON: %v", err)
 				}
-
-				deviceInputData := dto.RollupPayloadInputDTO{
+				
+				// TODO: use capnp instead
+				deviceInputData := dto.AdvaceInputDTO{
 					Kind:    "DeviceReport",
-					Payload: jsonBytesSignedData,
+					Payload: jsonBytesReport,
 				}
 
 				jsonBytesDeviceInputData, err := json.Marshal(deviceInputData)

@@ -28,6 +28,7 @@ func (u *FindAllAuctionsUseCase) Execute() (*FindAllAuctionsOutputDTO, error) {
 			State:     auction.State,
 			ExpiresAt: auction.ExpiresAt,
 			CreatedAt: auction.CreatedAt,
+			UpdatedAt: auction.UpdatedAt,
 		}
 	}
 	return &output, nil

@@ -18,10 +18,12 @@ func NewAuctionRepositorySqlite(db *sqlx.DB) *AuctionRepositorySqlite {
 func (s *AuctionRepositorySqlite) CreateAuction(input *entity.Auction) (*entity.Auction, error) {
 	var auction entity.Auction
 	err := s.Db.QueryRow(
-		"INSERT INTO auctions (credits, price_limit, expires_at) VALUES ($1, $2, $3) RETURNING id, credits, price_limit, state, expires_at, created_at, updated_at",
+		"INSERT INTO auctions (credits, price_limit, state, expires_at, created_at) VALUES ($1, $2, $3, $4, $5) RETURNING id, credits, price_limit, state, expires_at, created_at",
 		input.Credits.String(),
 		input.PriceLimit.String(),
+		input.State,
 		input.ExpiresAt,
+		input.CreatedAt,
 	).Scan(
 		&auction.Id,
 		&auction.Credits,
@@ -29,7 +31,6 @@ func (s *AuctionRepositorySqlite) CreateAuction(input *entity.Auction) (*entity.
 		&auction.State,
 		&auction.ExpiresAt,
 		&auction.CreatedAt,
-		&auction.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -58,10 +59,11 @@ func (s *AuctionRepositorySqlite) FindAllAuctions() ([]*entity.Auction, error) {
 func (s *AuctionRepositorySqlite) UpdateAuction(input *entity.Auction) (*entity.Auction, error) {
 	var auction entity.Auction
 	err := s.Db.QueryRow(
-		"UPDATE auctions SET credits = $1, price_limit = $2, expires_at = $3, state = $4 WHERE id = $5 RETURNING id, credits, price_limit, state, expires_at, created_at, updated_at",
+		"UPDATE auctions SET credits = $1, price_limit = $2, expires_at = $3, updated_at = $4, state = $5 WHERE id = $6 RETURNING id, credits, price_limit, state, expires_at, updated_at",
 		input.Credits.String(),
 		input.PriceLimit.String(),
 		input.ExpiresAt,
+		input.UpdatedAt,
 		input.State,
 		input.Id,
 	).Scan(
@@ -70,7 +72,6 @@ func (s *AuctionRepositorySqlite) UpdateAuction(input *entity.Auction) (*entity.
 		&auction.PriceLimit,
 		&auction.State,
 		&auction.ExpiresAt,
-		&auction.CreatedAt,
 		&auction.UpdatedAt,
 	)
 	if err != nil {
