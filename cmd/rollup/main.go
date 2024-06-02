@@ -54,8 +54,6 @@ func (d *DeVoltRollup) Advance(
 
 	stationRepository := database.NewStationRepositorySqlite(d.State)
 	userRepository := database.NewUserRepositorySqlite(d.State)
-	// auctionRepository := database.NewAuctionRepositorySqlite(d.State)
-	// bidRepository := database.NewBidRepositorySqlite(d.State)
 
 	// ////////////////////////// Handlers //////////////////////////
 	stationAdvanceHandlers := advance_handler.NewStationAdvanceHandlers(stationRepository)
@@ -63,12 +61,6 @@ func (d *DeVoltRollup) Advance(
 
 	///////////////////////// Router //////////////////////////
 	switch input.Kind {
-	// case "BuyEnergy":
-	// 	log.Printf("Rolling Buy: %v", string(input.Payload))
-	// case "SellEnergy":
-	// 	log.Printf("Rolling Sell: %v", string(input.Payload))
-	// case "FinishAuction":
-	// 	log.Printf("Rolling Finish: %v", string(input.Payload))
 	case "tokenAddress":
 		log.Printf("Rolling tokenAddress: %v", string(input.Payload))
 		if err := governanceAdvanceHandlers.SetTokenAddressAdvanceHandler(env, metadata, deposit, input.Payload); err != nil {
