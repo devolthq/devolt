@@ -1,7 +1,6 @@
 # Roadmap
 - [ ] Rollup with cartesi;
 - [ ] Tests;
-- [ ] Create contracts repository and create submodule with path to third_party;
 - [ ] Implement gRPC instead of kafka topic to create station from handler. [reference](https://github.com/devfullcycle/goexpert/blob/main/20-CleanArch/cmd/ordersystem/main.go#L53)
 - [ ] Actualize all GetEnvs to LookupEnv;
 - [ ] Docs with starlight;

@@ -10,28 +10,42 @@ import (
 	"log"
 	"log/slog"
 	"strings"
+
 	"github.com/devolthq/devolt/configs"
 	"github.com/devolthq/devolt/internal/domain/entity"
 	"github.com/devolthq/devolt/internal/infra/database"
 	"github.com/devolthq/devolt/internal/infra/rollup/handler/advance_handler"
 	"github.com/devolthq/devolt/internal/infra/rollup/handler/inspect_handler"
+	"github.com/devolthq/devolt/internal/infra/rollup/middleware"
 	"github.com/devolthq/devolt/internal/usecase/dto"
+	"github.com/devolthq/devolt/internal/usecase/user_usecase"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/jmoiron/sqlx"
 	"github.com/rollmelette/rollmelette"
 )
 
 type DeVoltRollup struct {
-	State     *sqlx.DB
-	Addresses map[string]common.Address
-	PublicKey *ecdsa.PublicKey
+	UserRepository    entity.UserRepository
+	StationRepository entity.StationRepository
+	AuctionRepository entity.AuctionRepository
+	BidRepository     entity.BidRepository
+	Addresses         map[string]common.Address
+	PublicKey         *ecdsa.PublicKey
 }
 
-func NewDeVoltRollup(state *sqlx.DB, addresses map[string]common.Address, publicKey *ecdsa.PublicKey) *DeVoltRollup {
+func NewDeVoltRollup(
+	userRepository entity.UserRepository,
+	stationRepository entity.StationRepository,
+	auctionRepository entity.AuctionRepository,
+	bidRepository entity.BidRepository,
+	addresses map[string]common.Address,
+	publicKey *ecdsa.PublicKey) *DeVoltRollup {
 	return &DeVoltRollup{
-		State:     state,
-		Addresses: addresses,
-		PublicKey: publicKey,
+		UserRepository:    userRepository,
+		StationRepository: stationRepository,
+		AuctionRepository: auctionRepository,
+		BidRepository:     bidRepository,
+		Addresses:         addresses,
+		PublicKey:         publicKey,
 	}
 }
 
@@ -50,32 +64,35 @@ func (d *DeVoltRollup) Advance(
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal input payload: %w", err)
 	}
-	// ////////////////////////// Repositories //////////////////////////
 
-	stationRepository := database.NewStationRepositorySqlite(d.State)
-	userRepository := database.NewUserRepositorySqlite(d.State)
+	/////////////////////////// Middleware //////////////////////////
+
+	RBAC := middleware.NewRBACMiddleware(d.UserRepository)
 
 	// ////////////////////////// Handlers //////////////////////////
-	stationAdvanceHandlers := advance_handler.NewStationAdvanceHandlers(stationRepository)
-	governanceAdvanceHandlers := advance_handler.NewGovernanceAdvanceHandlers(d.Addresses, userRepository)
+	stationAdvanceHandlers := advance_handler.NewStationAdvanceHandlers(d.StationRepository)
+	governanceAdvanceHandlers := advance_handler.NewGovernanceAdvanceHandlers(d.Addresses, d.UserRepository)
 
 	///////////////////////// Router //////////////////////////
 	switch input.Kind {
 	case "tokenAddress":
-		log.Printf("Rolling tokenAddress: %v", string(input.Payload))
-		if err := governanceAdvanceHandlers.SetTokenAddressAdvanceHandler(env, metadata, deposit, input.Payload); err != nil {
+		handler := RBAC.Middleware(governanceAdvanceHandlers.SetTokenAddressAdvanceHandler, "admin")
+		if err := handler(env, metadata, deposit, input.Payload); err != nil {
 			return fmt.Errorf("failed to set token address: %w", err)
 		}
 	case "deployerPluginAddress":
-		if err := governanceAdvanceHandlers.SetDeployerPluginAddressAdvanceHandler(env, metadata, deposit, input.Payload); err != nil {
+		handler := RBAC.Middleware(governanceAdvanceHandlers.SetDeployerPluginAddressAdvanceHandler, "admin")
+		if err := handler(env, metadata, deposit, input.Payload); err != nil {
 			return fmt.Errorf("failed to set deployer plugin address: %w", err)
 		}
 	case "grantAdminRole":
-		if err := governanceAdvanceHandlers.GrantAdminRoleAdvanceHandler(env, metadata, deposit, input.Payload); err != nil {
+		handler := RBAC.Middleware(governanceAdvanceHandlers.GrantAdminRoleAdvanceHandler, "admin")
+		if err := handler(env, metadata, deposit, input.Payload); err != nil {
 			return fmt.Errorf("failed to grant admin role: %w", err)
 		}
 	case "revokeAdminRole":
-		if err := governanceAdvanceHandlers.RevokeAdminRoleAdvanceHandler(env, metadata, deposit, input.Payload); err != nil {
+		handler := RBAC.Middleware(governanceAdvanceHandlers.RevokeAdminRoleAdvanceHandler, "admin")
+		if err := handler(env, metadata, deposit, input.Payload); err != nil {
 			return fmt.Errorf("failed to revoke admin role: %w", err)
 		}
 	case "report":
@@ -106,8 +123,7 @@ func (d *DeVoltRollup) Inspect(env rollmelette.EnvInspector, payload []byte) err
 	parameters := strings.Split(strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(string(payload), "/"), "/")), "/")
 	switch parameters[0] {
 	case "station":
-		stationRepository := database.NewStationRepositorySqlite(d.State)
-		stationInpectHandlers := inspect_handler.NewStationInspectHandlers(stationRepository)
+		stationInpectHandlers := inspect_handler.NewStationInspectHandlers(d.StationRepository)
 		if len(parameters) == 1 {
 			stationInpectHandlers.FindAllStationsInspectHandler(env, parameters)
 		} else if len(parameters) == 2 {
@@ -116,8 +132,7 @@ func (d *DeVoltRollup) Inspect(env rollmelette.EnvInspector, payload []byte) err
 			return fmt.Errorf("invalid payload: %v", payload)
 		}
 	case "auction":
-		auctionRepository := database.NewAuctionRepositorySqlite(d.State)
-		auctionInpectHandlers := inspect_handler.NewAuctionInspectHandlers(auctionRepository)
+		auctionInpectHandlers := inspect_handler.NewAuctionInspectHandlers(d.AuctionRepository)
 		if len(parameters) == 1 {
 			err := auctionInpectHandlers.FindAllAuctionsInspectHandler(env, parameters)
 			if err != nil {
@@ -132,8 +147,7 @@ func (d *DeVoltRollup) Inspect(env rollmelette.EnvInspector, payload []byte) err
 			return fmt.Errorf("invalid payload: %v", payload)
 		}
 	case "bid":
-		bidRepository := database.NewBidRepositorySqlite(d.State)
-		bidInpectHandlers := inspect_handler.NewBidInspectHandlers(bidRepository)
+		bidInpectHandlers := inspect_handler.NewBidInspectHandlers(d.BidRepository)
 		if len(parameters) == 1 {
 			err := bidInpectHandlers.FindAllBidsInspectHandler(env, parameters)
 			if err != nil {
@@ -148,8 +162,7 @@ func (d *DeVoltRollup) Inspect(env rollmelette.EnvInspector, payload []byte) err
 			return fmt.Errorf("invalid payload: %v", payload)
 		}
 	case "user":
-		userRepository := database.NewUserRepositorySqlite(d.State)
-		userInpectHandlers := inspect_handler.NewUserInspectHandlers(userRepository)
+		userInpectHandlers := inspect_handler.NewUserInspectHandlers(d.UserRepository)
 		if len(parameters) == 1 {
 			err := userInpectHandlers.FindAllUsersInspectHandler(env, parameters)
 			if err != nil {
@@ -187,16 +200,38 @@ func main() {
 		log.Fatalf("Failed to open and connect to database: %v", err)
 	}
 
-	//////////////////////// Setup Application //////////////////////////
-	deployerPlugin := common.HexToAddress("0x5FbDB2315678afecb367f032d93F642f64180aa3")
+	//////////////////////// Repositories //////////////////////////
 
+	stationRepository := database.NewStationRepositorySqlite(db)
+	userRepository := database.NewUserRepositorySqlite(db)
+	auctionRepository := database.NewAuctionRepositorySqlite(db)
+	bidRepository := database.NewBidRepositorySqlite(db)
+
+	//////////////////////// Setup Application //////////////////////////
+
+	deployerPlugin := common.HexToAddress("0x5FbDB2315678afecb367f032d93F642f64180aa3")
 	addresses := make(map[string]common.Address)
 	addresses["deployerPlugin"] = deployerPlugin
+
+	initialOrder := common.HexToAddress("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266")
+	if _, err = user_usecase.NewCreateUserUseCase(userRepository).Execute(&user_usecase.CreateUserInputDTO{
+		Address: initialOrder,
+		Role:    "admin",
+	}); err != nil {
+		slog.Error("failed to create initial order", "error", err)
+	}
 
 	///////////////////////// Rollmelette //////////////////////////
 	ctx := context.Background()
 	opts := rollmelette.NewRunOpts()
-	app := NewDeVoltRollup(db, addresses, publicKey)
+	app := NewDeVoltRollup(
+		userRepository,
+		stationRepository,
+		auctionRepository,
+		bidRepository,
+		addresses,
+		publicKey,
+	)
 	err = rollmelette.Run(ctx, opts, app)
 	if err != nil {
 		slog.Error("application error", "error", err)

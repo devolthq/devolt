@@ -52,15 +52,6 @@ func main() {
 	deviceRepository := database.NewDeviceRepositoryMongo(client, "mongodb", "devices")
 	deviceHandlers := handler.NewDeviceHandlers(deviceRepository, kafkaRepository)
 
-	auctionRepository := database.NewAuctionRepositorySqlite(db)
-	auctionHandlers := handler.NewAuctionHandlers(auctionRepository)
-
-	bidRepository := database.NewBidRepositorySqlite(db)
-	bidHandlers := handler.NewBidHandlers(bidRepository)
-
-	stationRepository := database.NewStationRepositorySqlite(db)
-	stationHandlers := handler.NewStationHandlers(stationRepository)
-
 	router := gin.Default()
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
@@ -74,7 +65,7 @@ func main() {
 	api := router.Group("/api/v1")
 	// api.Use(middleware.AuthMiddleware())
 
-	///////////// Healthcheck and Swagger ///////////////
+	////////////// Healthcheck and Swagger ///////////////
 
 	//TODO: "http://localhost:8083/api/healthz" is the best pattern for healthcheck?
 
@@ -84,51 +75,13 @@ func main() {
 
 	api.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	// ///////////////////// Devices //////////////////////
+	///////////////////// Devices //////////////////////
 
 	{
 		deviceGroup := api.Group("/device")
 		{
 			deviceGroup.GET("", deviceHandlers.FindAllDevicesHandler)
 			deviceGroup.POST("", deviceHandlers.CreateDeviceHandler)
-		}
-	}
-
-	///////////////////// Auction /////////////////////
-
-	{
-		auctionGroup := api.Group("/auction")
-		{
-			auctionGroup.POST("", auctionHandlers.CreateAuctionHandler)
-			auctionGroup.GET("", auctionHandlers.FindAllAuctionsHandler)
-			auctionGroup.GET("/:id", auctionHandlers.FindAuctionByIdHandler)
-			auctionGroup.PUT("/:id", auctionHandlers.UpdateAuctionHandler)
-			auctionGroup.DELETE("/:id", auctionHandlers.DeleteAuctionHandler)
-		}
-	}
-
-	///////////////////// Bids ///////////////////////
-
-	{
-		bidGroup := api.Group("/bid")
-		{
-			bidGroup.POST("", bidHandlers.CreateBidHandler)
-			bidGroup.GET("", bidHandlers.FindAllBidsHandler)
-			bidGroup.GET("/:id", bidHandlers.FindBidByIdHandler)
-			bidGroup.PUT("/:id", bidHandlers.UpdateBidHandler)
-			bidGroup.DELETE("/:id", bidHandlers.DeleteBidHandler)
-		}
-	}
-
-	///////////////////// Stations /////////////////////
-	{
-		stationGroup := api.Group("/station")
-		{
-			stationGroup.POST("", stationHandlers.CreateStationHandler)
-			stationGroup.GET("", stationHandlers.FindAllStationsHandler)
-			stationGroup.GET("/:id", stationHandlers.FindStationByIdHandler)
-			stationGroup.PUT("/:id", stationHandlers.UpdateStationHandler)
-			stationGroup.DELETE("/:id", stationHandlers.DeleteStationHandler)
 		}
 	}
 

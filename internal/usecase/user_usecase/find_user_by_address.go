@@ -12,6 +12,7 @@ type FindUserByAddressInputDTO struct {
 
 type FindUserByAddressOutputDTO struct {
 	Id      int            `json:"id"`
+	Role    string         `json:"role"`
 	Address common.Address `json:"address"`
 }
 
