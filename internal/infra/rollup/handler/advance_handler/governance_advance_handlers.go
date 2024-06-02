@@ -3,11 +3,8 @@ package advance_handler
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
-
 	"github.com/devolthq/devolt/internal/domain/entity"
 	"github.com/devolthq/devolt/internal/usecase/user_usecase"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rollmelette/rollmelette"
 )
@@ -63,24 +60,6 @@ func (h *GovernanceAdvanceHandlers) SetDeployerPluginAddressAdvanceHandler(env r
 	}
 	(*h.Addresses)["deployerPlugin"] = NewDeployerPluginAddress
 	env.Report([]byte(fmt.Sprintf("set deployer plugin address to: %v", NewDeployerPluginAddress)))
-	return nil
-}
-
-func (h *GovernanceAdvanceHandlers) DeployContractAdvanceHandler(env rollmelette.Env, metadata rollmelette.Metadata, deposit rollmelette.Deposit, payload []byte) error {
-	abiJson := `[{"inputs":[{"internalType":"bytes","name":"_bytecode","type":"bytes"}],"stateMutability":"payable","type":"function","name":"deployAnyContract","outputs":[{"internalType":"address","name":"addr","type":"address"}]}]`
-	abiInterface, err := abi.JSON(strings.NewReader(abiJson))
-	if err != nil {
-		return err
-	}
-	var input string
-	if err := json.Unmarshal(payload, &input); err != nil {
-		return err
-	}
-	voucher, err := abiInterface.Pack("deployAnyContract", common.FromHex(input))
-	if err != nil {
-		return err
-	}
-	env.Voucher((*h.Addresses)["deployerPlugin"], voucher)
 	return nil
 }
 

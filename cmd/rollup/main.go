@@ -78,10 +78,6 @@ func (d *DeVoltRollup) Advance(
 		if err := governanceAdvanceHandlers.SetDeployerPluginAddressAdvanceHandler(env, metadata, deposit, input.Payload); err != nil {
 			return fmt.Errorf("failed to set deployer plugin address: %w", err)
 		}
-	case "deployContract":
-		if err := governanceAdvanceHandlers.DeployContractAdvanceHandler(env, metadata, deposit, input.Payload); err != nil {
-			return fmt.Errorf("failed to deploy contract: %w", err)
-		}
 	case "grantAdminRole":
 		if err := governanceAdvanceHandlers.GrantAdminRoleAdvanceHandler(env, metadata, deposit, input.Payload); err != nil {
 			return fmt.Errorf("failed to grant admin role: %w", err)
