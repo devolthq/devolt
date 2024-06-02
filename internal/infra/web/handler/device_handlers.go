@@ -6,7 +6,7 @@ import (
 	"os"
 	"github.com/devolthq/devolt/internal/domain/entity"
 	"github.com/devolthq/devolt/internal/infra/kafka"
-	"github.com/devolthq/devolt/internal/usecase"
+	"github.com/devolthq/devolt/internal/usecase/device_usecase"
 	"github.com/gin-gonic/gin"
 )
 
@@ -30,12 +30,12 @@ func NewDeviceHandlers(deviceRepository entity.DeviceRepository, kafkaClient *ka
 // @Success			200		{string}	string		"Device created successfully"
 // @Router				/device [post]
 func (s *DeviceHandlers) CreateDeviceHandler(c *gin.Context) {
-	var input usecase.CreateDeviceInputDTO
+	var input device_usecase.CreateDeviceInputDTO
 	if err := c.BindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"Error binding request body": err.Error()})
 		return
 	}
-	createDevice := usecase.NewCreateDeviceUseCase(s.DeviceRepository)
+	createDevice := device_usecase.NewCreateDeviceUseCase(s.DeviceRepository)
 	output, err := createDevice.Execute(&input)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"Error creating device": err.Error()})
@@ -63,7 +63,7 @@ func (s *DeviceHandlers) CreateDeviceHandler(c *gin.Context) {
 //		@Success			200		{object}	usecase.FindAllDevicesOutputDTO
 //		@Router				/device [get]
 func (s *DeviceHandlers) FindAllDevicesHandler(c *gin.Context) {
-	findAllDevices := usecase.NewFindAllDevicesUseCase(s.DeviceRepository)
+	findAllDevices := device_usecase.NewFindAllDevicesUseCase(s.DeviceRepository)
 	output, err := findAllDevices.Execute()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"Error finding devices": err.Error()})

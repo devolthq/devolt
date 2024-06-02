@@ -10,7 +10,7 @@ import (
 )
 
 type Payload struct {
-	DeviceId  string         `json:"device_id"`
+	Id        string         `json:"id"`
 	Wallet    common.Address `json:"owner"`
 	Rate      float64        `json:"rate"`
 	Latitude  float64        `json:"latitude"`
@@ -40,7 +40,7 @@ func EntropyWithConfidenceInterval(min float64, max float64, z float64) float64 
 	return math.Round(rand.Float64()*(a-b) + b)
 }
 
-func NewPayload(deviceId string, wallet common.Address, params map[string]interface{}, latitude float64, longitude float64) (*Payload, error) {
+func NewPayload(id string, wallet common.Address, params map[string]interface{}, latitude float64, longitude float64) (*Payload, error) {
 	min, ok := params["min"].(float64)
 	if !ok {
 		log.Fatalf("Min value not found or not a float64: %v", params["min"])
@@ -51,7 +51,7 @@ func NewPayload(deviceId string, wallet common.Address, params map[string]interf
 	}
 	rate := EntropyWithConfidenceInterval(min, max, 1.96) // 95% confidence interval with z = 1.96 (https://en.wikipedia.org/wiki/Standard_normal_table)
 	return &Payload{
-		DeviceId:  deviceId,
+		Id:        id,
 		Wallet:    wallet,
 		Rate:      rate,
 		Latitude:  latitude,

@@ -2,7 +2,7 @@ package handler
 
 import (
 	"github.com/devolthq/devolt/internal/domain/entity"
-	"github.com/devolthq/devolt/internal/usecase"
+	"github.com/devolthq/devolt/internal/usecase/auction_usecase"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
@@ -19,12 +19,12 @@ func NewAuctionHandlers(auctionRepository entity.AuctionRepository) *AuctionHand
 }
 
 func (h *AuctionHandlers) CreateAuctionHandler(c *gin.Context) {
-	var input usecase.CreateAuctionInputDTO
+	var input auction_usecase.CreateAuctionInputDTO
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	createAuction := usecase.NewCreateAuctionUseCase(h.AuctionRepository)
+	createAuction := auction_usecase.NewCreateAuctionUseCase(h.AuctionRepository)
 	res, err := createAuction.Execute(&input)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"Error creating auction": err.Error()})
@@ -34,7 +34,7 @@ func (h *AuctionHandlers) CreateAuctionHandler(c *gin.Context) {
 }
 
 func (h *AuctionHandlers) FindAllAuctionsHandler(c *gin.Context) {
-	findAllAuctions := usecase.NewFindAllAuctionsUseCase(h.AuctionRepository)
+	findAllAuctions := auction_usecase.NewFindAllAuctionsUseCase(h.AuctionRepository)
 	res, err := findAllAuctions.Execute()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"Error finding auctions": err.Error()})
@@ -44,7 +44,7 @@ func (h *AuctionHandlers) FindAllAuctionsHandler(c *gin.Context) {
 }
 
 func (h *AuctionHandlers) FindAuctionByIdHandler(c *gin.Context) {
-	var input usecase.FindAuctionByIdInputDTO
+	var input auction_usecase.FindAuctionByIdInputDTO
 	auctionId := c.Param("id")
 	id, err := strconv.Atoi(auctionId)
 	if err != nil {
@@ -52,7 +52,7 @@ func (h *AuctionHandlers) FindAuctionByIdHandler(c *gin.Context) {
 		return
 	}
 	input.Id = id
-	findAuctionById := usecase.NewFindAuctionByIdUseCase(h.AuctionRepository)
+	findAuctionById := auction_usecase.NewFindAuctionByIdUseCase(h.AuctionRepository)
 	res, err := findAuctionById.Execute(&input)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"Error finding auction": err.Error()})
@@ -62,7 +62,7 @@ func (h *AuctionHandlers) FindAuctionByIdHandler(c *gin.Context) {
 }
 
 func (h *AuctionHandlers) UpdateAuctionHandler(c *gin.Context) {
-	var input usecase.UpdateAuctionInputDTO
+	var input auction_usecase.UpdateAuctionInputDTO
 	auctionId := c.Param("id")
 	id, err := strconv.Atoi(auctionId)
 	if err != nil {
@@ -74,7 +74,7 @@ func (h *AuctionHandlers) UpdateAuctionHandler(c *gin.Context) {
 		return
 	}
 	input.Id = id
-	updateAuction := usecase.NewUpdateAuctionUseCase(h.AuctionRepository)
+	updateAuction := auction_usecase.NewUpdateAuctionUseCase(h.AuctionRepository)
 	output, err := updateAuction.Execute(&input)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"Error updating auction": err.Error()})
@@ -84,7 +84,7 @@ func (h *AuctionHandlers) UpdateAuctionHandler(c *gin.Context) {
 }
 
 func (h *AuctionHandlers) DeleteAuctionHandler(c *gin.Context) {
-	var input usecase.DeleteAuctionInputDTO
+	var input auction_usecase.DeleteAuctionInputDTO
 	auctionId := c.Param("id")
 	id, err := strconv.Atoi(auctionId)
 	if err != nil {
@@ -92,7 +92,7 @@ func (h *AuctionHandlers) DeleteAuctionHandler(c *gin.Context) {
 		return
 	}
 	input.Id = id
-	deleteAuction := usecase.NewDeleteAuctionUseCase(h.AuctionRepository)
+	deleteAuction := auction_usecase.NewDeleteAuctionUseCase(h.AuctionRepository)
 	err = deleteAuction.Execute(&input)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"Error deleting auction": err.Error()})

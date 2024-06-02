@@ -2,7 +2,7 @@ package handler
 
 import (
 	"github.com/devolthq/devolt/internal/domain/entity"
-	"github.com/devolthq/devolt/internal/usecase"
+	"github.com/devolthq/devolt/internal/usecase/station_usecase"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -18,12 +18,12 @@ func NewStationHandlers(stationRepository entity.StationRepository) *StationHand
 }
 
 func (h *StationHandlers) CreateStationHandler(c *gin.Context) {
-	var input usecase.CreateStationInputDTO
+	var input station_usecase.CreateStationInputDTO
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	createStation := usecase.NewCreateStationUseCase(h.StationRepository)
+	createStation := station_usecase.NewCreateStationUseCase(h.StationRepository)
 	res, err := createStation.Execute(&input)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"Error creating station": err.Error()})
@@ -33,7 +33,7 @@ func (h *StationHandlers) CreateStationHandler(c *gin.Context) {
 }
 
 func (h *StationHandlers) FindAllStationsHandler(c *gin.Context) {
-	findAllStations := usecase.NewFindAllStationsUseCase(h.StationRepository)
+	findAllStations := station_usecase.NewFindAllStationsUseCase(h.StationRepository)
 	res, err := findAllStations.Execute()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"Error finding stations": err.Error()})
@@ -43,9 +43,9 @@ func (h *StationHandlers) FindAllStationsHandler(c *gin.Context) {
 }
 
 func (h *StationHandlers) FindStationByIdHandler(c *gin.Context) {
-	var input usecase.FindStationByIdInputDTO
+	var input station_usecase.FindStationByIdInputDTO
 	input.Id = c.Param("id")
-	findStationById := usecase.NewFindStationByIdUseCase(h.StationRepository)
+	findStationById := station_usecase.NewFindStationByIdUseCase(h.StationRepository)
 	res, err := findStationById.Execute(&input)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"Error finding station": err.Error()})
@@ -55,13 +55,13 @@ func (h *StationHandlers) FindStationByIdHandler(c *gin.Context) {
 }
 
 func (h *StationHandlers) UpdateStationHandler(c *gin.Context) {
-	var input usecase.UpdateStationInputDTO
+	var input station_usecase.UpdateStationInputDTO
 	input.Id = c.Param("id")
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"Error binding request body": err.Error()})
 		return
 	}
-	updateStation := usecase.NewUpdateStationUseCase(h.StationRepository)
+	updateStation := station_usecase.NewUpdateStationUseCase(h.StationRepository)
 	output, err := updateStation.Execute(&input)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"Error updating station": err.Error()})
@@ -71,9 +71,9 @@ func (h *StationHandlers) UpdateStationHandler(c *gin.Context) {
 }
 
 func (h *StationHandlers) DeleteStationHandler(c *gin.Context) {
-	var input usecase.DeleteStationInputDTO
+	var input station_usecase.DeleteStationInputDTO
 	input.Id = c.Param("id")
-	deleteStation := usecase.NewDeleteStationUseCase(h.StationRepository)
+	deleteStation := station_usecase.NewDeleteStationUseCase(h.StationRepository)
 	err := deleteStation.Execute(&input)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"Error deleting station": err.Error()})

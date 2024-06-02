@@ -3,18 +3,19 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	ckafka "github.com/confluentinc/confluent-kafka-go/v2/kafka"
-	"github.com/devolthq/devolt/configs"
-	"github.com/devolthq/devolt/internal/domain/entity"
-	"github.com/devolthq/devolt/internal/infra/kafka"
-	"github.com/devolthq/devolt/internal/infra/repository"
-	"github.com/devolthq/devolt/internal/usecase"
-	"github.com/devolthq/devolt/internal/usecase/dto"
-	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"log"
 	"os"
 	"sync"
 	"time"
+
+	ckafka "github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	"github.com/devolthq/devolt/configs"
+	"github.com/devolthq/devolt/internal/domain/entity"
+	"github.com/devolthq/devolt/internal/infra/database"
+	"github.com/devolthq/devolt/internal/infra/kafka"
+	"github.com/devolthq/devolt/internal/usecase/device_usecase"
+	"github.com/devolthq/devolt/internal/usecase/dto"
+	MQTT "github.com/eclipse/paho.mqtt.golang"
 )
 
 func main() {
@@ -46,8 +47,8 @@ func main() {
 
 	///////////////////////// Repositiories ///////////////////////////
 
-	deviceRepository := repository.NewDeviceRepositoryMongo(client, "mongodb", "devices")
-	findAllDevicesUseCase := usecase.NewFindAllDevicesUseCase(deviceRepository)
+	deviceRepository := database.NewDeviceRepositoryMongo(client, "mongodb", "devices")
+	findAllDevicesUseCase := device_usecase.NewFindAllDevicesUseCase(deviceRepository)
 
 	////////////////////// Devices From MongoDB ////////////////////////
 
@@ -59,20 +60,20 @@ func main() {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
-	go func(devices []*usecase.FindAllDevicesOutputDTO) {
+	go func(devices []*device_usecase.FindAllDevicesOutputDTO) {
 		defer wg.Done()
 		for _, device := range devices {
 			log.Printf("Starting device: %v", device)
 			// TODO: create an usecase for this instead duplicate the code
-			go func(device *usecase.FindAllDevicesOutputDTO) {
-				opts := MQTT.NewClientOptions().AddBroker(fmt.Sprintf("tcp://%s:%s", os.Getenv("BROKER_URL"), os.Getenv("BROKER_PORT"))).SetClientID(device.DeviceId)
+			go func(device *device_usecase.FindAllDevicesOutputDTO) {
+				opts := MQTT.NewClientOptions().AddBroker(fmt.Sprintf("tcp://%s:%s", os.Getenv("BROKER_URL"), os.Getenv("BROKER_PORT"))).SetClientID(device.Id)
 				client := MQTT.NewClient(opts)
 				if session := client.Connect(); session.Wait() && session.Error() != nil {
 					log.Fatalf("Failed to connect to MQTT broker: %v", session.Error())
 				}
 				for {
 					payload, err := entity.NewPayload(
-						device.DeviceId,
+						device.Id,
 						device.Wallet,
 						device.Params,
 						device.Latitude,
@@ -96,10 +97,10 @@ func main() {
 					if err != nil {
 						log.Fatalf("Error converting report to JSON: %v", err)
 					}
-					
+
 					// TODO: use capnp instead
 					deviceInputData := dto.AdvaceInputDTO{
-						Kind:    "deviceReport",
+						Kind:    "report",
 						Payload: jsonBytesReport,
 					}
 
@@ -129,21 +130,21 @@ func main() {
 	//////////////////////// Devices From Kafka ////////////////////////
 
 	for msg := range msgChan {
-		raw := usecase.CreateDeviceOutputDTO{}
+		raw := device_usecase.CreateDeviceOutputDTO{}
 		err := json.Unmarshal(msg.Value, &raw)
 		if err != nil {
 			log.Println("Error unmarshalling JSON into type:", err)
 		}
 		log.Printf("Starting device: %v", raw)
-		go func(device usecase.CreateDeviceOutputDTO) {
-			opts := MQTT.NewClientOptions().AddBroker(fmt.Sprintf("tcp://%s:%s", os.Getenv("BROKER_URL"), os.Getenv("BROKER_PORT"))).SetClientID(device.DeviceId)
+		go func(device device_usecase.CreateDeviceOutputDTO) {
+			opts := MQTT.NewClientOptions().AddBroker(fmt.Sprintf("tcp://%s:%s", os.Getenv("BROKER_URL"), os.Getenv("BROKER_PORT"))).SetClientID(device.Id)
 			client := MQTT.NewClient(opts)
 			if session := client.Connect(); session.Wait() && session.Error() != nil {
 				log.Fatalf("Failed to connect to MQTT broker: %v", session.Error())
 			}
 			for {
 				payload, err := entity.NewPayload(
-					device.DeviceId,
+					device.Id,
 					device.Wallet,
 					device.Params,
 					device.Latitude,
@@ -167,10 +168,10 @@ func main() {
 				if err != nil {
 					log.Fatalf("Error converting report to JSON: %v", err)
 				}
-				
+
 				// TODO: use capnp instead
 				deviceInputData := dto.AdvaceInputDTO{
-					Kind:    "deviceReport",
+					Kind:    "report",
 					Payload: jsonBytesReport,
 				}
 

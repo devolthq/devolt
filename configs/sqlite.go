@@ -47,6 +47,11 @@ func SetupSQLite() (*sqlx.DB, error) {
 			created_at INTEGER NOT NULL,
 			updated_at INTEGER DEFAULT 0
 		);`,
+		`CREATE TABLE users (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			address TEXT NOT NULL ,
+			role TEXT NOT NULL
+		);`,
 	}
 
 	for _, m := range migrations {

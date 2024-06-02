@@ -1,5 +1,3 @@
--include .env.develop
-
 START_LOG = @echo "================================================= START OF LOG ==================================================="
 END_LOG = @echo "================================================== END OF LOG ===================================================="
 
@@ -93,7 +91,7 @@ deploy:
 .PHONY: bytecode
 bytecode:
 	$(START_LOG)
-	@cd contracts && forge script $(BYTECODE_NETWORK_ARGS) > ../bytecode.txt
+	@cd contracts && forge script script/Bytecode.s.sol --rpc-url http://localhost:8545 --private-key ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 -v > ../bytecode.txt
 	@echo "Bytecode of Volt Contract created"
 	$(END_LOG)
 

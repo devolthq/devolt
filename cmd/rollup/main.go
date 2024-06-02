@@ -3,36 +3,34 @@ package main
 import (
 	"context"
 	"crypto/ecdsa"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"log/slog"
-	"strconv"
 	"strings"
-
 	"github.com/devolthq/devolt/configs"
 	"github.com/devolthq/devolt/internal/domain/entity"
-	"github.com/devolthq/devolt/internal/infra/repository"
-	"github.com/devolthq/devolt/internal/usecase"
+	"github.com/devolthq/devolt/internal/infra/database"
+	"github.com/devolthq/devolt/internal/infra/rollup/handler/advance_handler"
+	"github.com/devolthq/devolt/internal/infra/rollup/handler/inspect_handler"
 	"github.com/devolthq/devolt/internal/usecase/dto"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
 	"github.com/rollmelette/rollmelette"
 )
 
 type DeVoltRollup struct {
-	State                 *sqlx.DB
-	Owner                 *common.Address
-	TokenAddress          *common.Address
-	DeployerPluginAddress *common.Address
-	PublicKey             *ecdsa.PublicKey
+	State     *sqlx.DB
+	Addresses map[string]common.Address
+	PublicKey *ecdsa.PublicKey
 }
 
-func NewDeVoltRollup(state *sqlx.DB, initialOwner *common.Address, publicKey *ecdsa.PublicKey) *DeVoltRollup {
+func NewDeVoltRollup(state *sqlx.DB, addresses map[string]common.Address, publicKey *ecdsa.PublicKey) *DeVoltRollup {
 	return &DeVoltRollup{
 		State:     state,
-		Owner:     initialOwner,
+		Addresses: addresses,
 		PublicKey: publicKey,
 	}
 }
@@ -54,30 +52,14 @@ func (d *DeVoltRollup) Advance(
 	}
 	// ////////////////////////// Repositories //////////////////////////
 
-	stationRepository := repository.NewStationRepositorySqlite(d.State)
-	// auctionRepository := repository.NewAuctionRepositorySqlite(db)
-	// bidRepository := repository.NewBidRepositorySqlite(db)
+	stationRepository := database.NewStationRepositorySqlite(d.State)
+	userRepository := database.NewUserRepositorySqlite(d.State)
+	// auctionRepository := database.NewAuctionRepositorySqlite(d.State)
+	// bidRepository := database.NewBidRepositorySqlite(d.State)
 
-	// ////////////////////////// Use Cases //////////////////////////
-
-	// // Auction
-	// createAuctionUseCase := usecase.NewCreateAuctionUseCase(auctionRepository)
-	// findAuctionByIdUseCase := usecase.NewFindAuctionByIdUseCase(auctionRepository)
-	// findAllAuctionsUseCase := usecase.NewFindAllAuctionsUseCase(auctionRepository)
-	// updateAuctionUseCase := usecase.NewUpdateAuctionUseCase(auctionRepository)
-	// deleteAuctionUseCase := usecase.NewDeleteAuctionUseCase(auctionRepository)
-	// // Bid
-	// createBidUseCase := usecase.NewCreateBidUseCase(bidRepository)
-	// findBidByIdUseCase := usecase.NewFindBidByIdUseCase(bidRepository)
-	// findAllBidsUseCase := usecase.NewFindAllBidsUseCase(bidRepository)
-	// updateBidUseCase := usecase.NewUpdateBidUseCase(bidRepository)
-	// deleteBidUseCase := usecase.NewDeleteBidUseCase(bidRepository)
-	// // Station
-	createStationUseCase := usecase.NewCreateStationUseCase(stationRepository)
-	findStationByIdUseCase := usecase.NewFindStationByIdUseCase(stationRepository)
-	// findAllStationsUseCase := usecase.NewFindAllStationsUseCase(stationRepository)
-	updateStationUseCase := usecase.NewUpdateStationUseCase(stationRepository)
-	// deleteStationUseCase := usecase.NewDeleteStationUseCase(stationRepository)
+	// ////////////////////////// Handlers //////////////////////////
+	stationAdvanceHandlers := advance_handler.NewStationAdvanceHandlers(stationRepository)
+	governanceAdvanceHandlers := advance_handler.NewGovernanceAdvanceHandlers(d.Addresses, userRepository)
 
 	///////////////////////// Router //////////////////////////
 	switch input.Kind {
@@ -88,65 +70,27 @@ func (d *DeVoltRollup) Advance(
 	// case "FinishAuction":
 	// 	log.Printf("Rolling Finish: %v", string(input.Payload))
 	case "tokenAddress":
-		var NewTokenAddress common.Address
-		if err := json.Unmarshal(input.Payload, &NewTokenAddress); err != nil {
-			return fmt.Errorf("failed to unmarshal new token address as address: %w", err)
+		log.Printf("Rolling tokenAddress: %v", string(input.Payload))
+		if err := governanceAdvanceHandlers.SetTokenAddressAdvanceHandler(env, metadata, deposit, input.Payload); err != nil {
+			return fmt.Errorf("failed to set token address: %w", err)
 		}
-		d.TokenAddress = &NewTokenAddress
-		env.Report([]byte(fmt.Sprintf("set token address to: %v", NewTokenAddress)))
 	case "deployerPluginAddress":
-		var NewDeployerPluginAddress common.Address
-		if err := json.Unmarshal(input.Payload, &NewDeployerPluginAddress); err != nil {
-			return fmt.Errorf("failed to unmarshal new deployer plugin address as address: %w", err)
+		if err := governanceAdvanceHandlers.SetDeployerPluginAddressAdvanceHandler(env, metadata, deposit, input.Payload); err != nil {
+			return fmt.Errorf("failed to set deployer plugin address: %w", err)
 		}
-		d.DeployerPluginAddress = &NewDeployerPluginAddress
-		env.Report([]byte(fmt.Sprintf("set deployer plugin address to: %v", NewDeployerPluginAddress)))
 	case "deployContract":
-		abiJson := `[{
-										"inputs":[
-											{
-													"internalType":"bytes",
-													"name":"_bytecode",
-													"type":"bytes"
-											}
-										],
-										"stateMutability":"payable",
-										"type":"function",
-										"name":"deployAnyContract",
-										"outputs":[
-											{
-													"internalType":"address",
-													"name":"addr",
-													"type":"address"
-											}
-										]
-								}]`
-		abiInterface, err := abi.JSON(strings.NewReader(abiJson))
-		if err != nil {
-			return fmt.Errorf("failed to parse abi: %w", err)
+		if err := governanceAdvanceHandlers.DeployContractAdvanceHandler(env, metadata, deposit, input.Payload); err != nil {
+			return fmt.Errorf("failed to deploy contract: %w", err)
 		}
-		voucher, err := abiInterface.Pack("deployAnyContract", input.Payload)
-		if err != nil {
-			return fmt.Errorf("failed to pack abi: %w", err)
-		}
-		env.Voucher(*d.DeployerPluginAddress, voucher)
 	case "grantAdminRole":
-		log.Printf("Rolling GrantAdminRole: %v", string(input.Payload))
-		var NewOwner common.Address
-		if err := json.Unmarshal(input.Payload, &NewOwner); err != nil {
-			return fmt.Errorf("failed to unmarshal new owner as address: %w", err)
+		if err := governanceAdvanceHandlers.GrantAdminRoleAdvanceHandler(env, metadata, deposit, input.Payload); err != nil {
+			return fmt.Errorf("failed to grant admin role: %w", err)
 		}
-		d.Owner = &NewOwner
-		env.Report([]byte(fmt.Sprintf("granted admin role to: %v", NewOwner)))
 	case "revokeAdminRole":
-		var remainingOwners common.Address
-		if err := json.Unmarshal(input.Payload, &remainingOwners); err != nil {
-			return fmt.Errorf("failed to unmarshal remaining owners: %w", err)
+		if err := governanceAdvanceHandlers.RevokeAdminRoleAdvanceHandler(env, metadata, deposit, input.Payload); err != nil {
+			return fmt.Errorf("failed to revoke admin role: %w", err)
 		}
-		d.Owner = &remainingOwners
-		env.Report([]byte(fmt.Sprintf("revoked admin role from: %v", metadata.MsgSender)))
-	case "deviceReport":
-		log.Printf("Rolling DeviceReport: %v and payload: %v", string(input.Payload), input.Payload)
+	case "report":
 		////////////////////////// Decode Report //////////////////////////
 		var report *entity.Report
 		if err := json.Unmarshal(input.Payload, &report); err != nil {
@@ -156,176 +100,89 @@ func (d *DeVoltRollup) Advance(
 		if valid := ecdsa.Verify(d.PublicKey, report.Payload, report.R, report.S); !valid {
 			return fmt.Errorf("invalid report: %v", report)
 		}
-		//////////////////////// Decode Payload //////////////////////////
-		var payload *entity.Payload
-		if err := json.Unmarshal(report.Payload, &payload); err != nil {
-			return fmt.Errorf("failed to unmarshal payload: %w", err)
-		}
-		//////////////////////// Verify if station exists and if not exist, create one //////////////////////////
-		station, err := findStationByIdUseCase.Execute(&usecase.FindStationByIdInputDTO{
-			Id: payload.DeviceId,
-		})
-		if err != nil {
-			output, err := createStationUseCase.Execute(&usecase.CreateStationInputDTO{
-				Id:        payload.DeviceId,
-				Rate:      payload.Rate / 30,
-				Owner:     payload.Wallet,
-				Latitude:  payload.Latitude,
-				Longitude: payload.Longitude,
-				State:     "active",
-				CreatedAt: metadata.BlockTimestamp,
-			})
-			if err != nil {
-				return fmt.Errorf("failed to create station: %w", err)
+		//////////////////////// Process Report //////////////////////////
+		if err := stationAdvanceHandlers.UpdateStationAdvanceHandler(env, metadata, deposit, report.Payload); errors.Is(err, sql.ErrNoRows) {
+			if err := stationAdvanceHandlers.CreateStationAdvanceHandler(env, metadata, deposit, report.Payload); err != nil {
+				return fmt.Errorf("failed to update or create station: %w", err)
 			}
-			outputBytes, err := json.Marshal(output)
-			if err != nil {
-				return fmt.Errorf("failed to marshal output: %w", err)
-			}
-			env.Report(outputBytes)
-			log.Printf("Station created: %v", output.Id)
-			return nil
-		} else {
-			//////////////////////// Update Station //////////////////////////
-			output, err := updateStationUseCase.Execute(&usecase.UpdateStationInputDTO{
-				Id:        station.Id,
-				Rate:      station.Rate + (payload.Rate / 30),
-				Owner:     payload.Wallet,
-				State:     "active",
-				Latitude:  payload.Latitude,
-				Longitude: payload.Longitude,
-				UpdatedAt: metadata.BlockTimestamp,
-			})
-			if err != nil {
-				return fmt.Errorf("failed to update station: %w", err)
-			}
-			outputBytes, err := json.Marshal(output)
-			if err != nil {
-				return fmt.Errorf("failed to marshal output: %w", err)
-			}
-			env.Report(outputBytes)
-			log.Printf("Station updated: %v", output.Id)
+		} else if err != nil {
+			return fmt.Errorf("failed to update station: %w", err)
 		}
 	default:
-		return fmt.Errorf("invalid input: %v", input)
+		return fmt.Errorf("unknown input kind: %v", input.Kind)
 	}
 	return nil
 }
 
 func (d *DeVoltRollup) Inspect(env rollmelette.EnvInspector, payload []byte) error {
 	parameters := strings.Split(strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(string(payload), "/"), "/")), "/")
-
-	stationRepository := repository.NewStationRepositorySqlite(d.State)
-	auctionRepository := repository.NewAuctionRepositorySqlite(d.State)
-	bidRepository := repository.NewBidRepositorySqlite(d.State)
-
-	if len(parameters) == 0 {
-		return fmt.Errorf("no parameters provided")
-	}
-
 	switch parameters[0] {
 	case "station":
+		stationRepository := database.NewStationRepositorySqlite(d.State)
+		stationInpectHandlers := inspect_handler.NewStationInspectHandlers(stationRepository)
 		if len(parameters) == 1 {
-			findAllStationsUseCase := usecase.NewFindAllStationsUseCase(stationRepository)
-			res, err := findAllStationsUseCase.Execute()
-			if err != nil {
-				return fmt.Errorf("failed to find all stations: %w", err)
-			}
-			allStations, err := json.Marshal(res)
-			if err != nil {
-				return fmt.Errorf("failed to marshal all stations: %w", err)
-			}
-			env.Report(allStations)
+			stationInpectHandlers.FindAllStationsInspectHandler(env, parameters)
 		} else if len(parameters) == 2 {
-			findStationByIdUseCase := usecase.NewFindStationByIdUseCase(stationRepository)
-			res, err := findStationByIdUseCase.Execute(&usecase.FindStationByIdInputDTO{
-				Id: parameters[1],
-			})
-			if err != nil {
-				return fmt.Errorf("failed to find station: %w", err)
-			}
-			station, err := json.Marshal(res)
-			if err != nil {
-				return fmt.Errorf("failed to marshal station: %w", err)
-			}
-			env.Report(station)
+			stationInpectHandlers.FindStationByIdInspectHandler(env, parameters)
 		} else {
 			return fmt.Errorf("invalid payload: %v", payload)
 		}
 	case "auction":
+		auctionRepository := database.NewAuctionRepositorySqlite(d.State)
+		auctionInpectHandlers := inspect_handler.NewAuctionInspectHandlers(auctionRepository)
 		if len(parameters) == 1 {
-			findAllAuctionsUseCase := usecase.NewFindAllAuctionsUseCase(auctionRepository)
-			res, err := findAllAuctionsUseCase.Execute()
+			err := auctionInpectHandlers.FindAllAuctionsInspectHandler(env, parameters)
 			if err != nil {
 				return fmt.Errorf("failed to find all auctions: %w", err)
 			}
-			allAuctions, err := json.Marshal(res)
-			if err != nil {
-				return fmt.Errorf("failed to marshal all auctions: %w", err)
-			}
-			env.Report(allAuctions)
 		} else if len(parameters) == 2 {
-			findAuctionByIdUseCase := usecase.NewFindAuctionByIdUseCase(auctionRepository)
-			id, err := strconv.Atoi(parameters[1])
-			if err != nil {
-				return fmt.Errorf("invalid payload: %v", payload)
-			}
-			res, err := findAuctionByIdUseCase.Execute(&usecase.FindAuctionByIdInputDTO{
-				Id: id,
-			})
+			err := auctionInpectHandlers.FindAuctionByIdInspectHandler(env, parameters)
 			if err != nil {
 				return fmt.Errorf("failed to find auction: %w", err)
 			}
-			auction, err := json.Marshal(res)
-			if err != nil {
-				return fmt.Errorf("failed to marshal auction: %w", err)
-			}
-			env.Report(auction)
 		} else {
 			return fmt.Errorf("invalid payload: %v", payload)
 		}
 	case "bid":
+		bidRepository := database.NewBidRepositorySqlite(d.State)
+		bidInpectHandlers := inspect_handler.NewBidInspectHandlers(bidRepository)
 		if len(parameters) == 1 {
-			findAllBidsUseCase := usecase.NewFindAllBidsUseCase(bidRepository)
-			res, err := findAllBidsUseCase.Execute()
+			err := bidInpectHandlers.FindAllBidsInspectHandler(env, parameters)
 			if err != nil {
 				return fmt.Errorf("failed to find all bids: %w", err)
 			}
-			allBids, err := json.Marshal(res)
-			if err != nil {
-				return fmt.Errorf("failed to marshal all bids: %w", err)
-			}
-			env.Report(allBids)
 		} else if len(parameters) == 2 {
-			findBidByIdUseCase := usecase.NewFindBidByIdUseCase(bidRepository)
-			id, err := strconv.Atoi(parameters[1])
-			if err != nil {
-				return fmt.Errorf("invalid payload: %v", payload)
-			}
-			res, err := findBidByIdUseCase.Execute(&usecase.FindBidByIdInputDTO{
-				Id: id,
-			})
+			err := bidInpectHandlers.FindBidByIdInspectHandler(env, parameters)
 			if err != nil {
 				return fmt.Errorf("failed to find bid: %w", err)
 			}
-			bid, err := json.Marshal(res)
-			if err != nil {
-				return fmt.Errorf("failed to marshal bid: %w", err)
-			}
-			env.Report(bid)
 		} else {
 			return fmt.Errorf("invalid payload: %v", payload)
 		}
-	case "admin":
+	case "user":
+		userRepository := database.NewUserRepositorySqlite(d.State)
+		userInpectHandlers := inspect_handler.NewUserInspectHandlers(userRepository)
 		if len(parameters) == 1 {
-			allO, err := json.Marshal(d.Owner)
+			err := userInpectHandlers.FindAllUsersInspectHandler(env, parameters)
 			if err != nil {
-				return fmt.Errorf("failed to marshal all O: %w", err)
+				return fmt.Errorf("failed to find all users: %w", err)
 			}
-			env.Report(allO)
+		} else if len(parameters) == 2 {
+			err := userInpectHandlers.FindUserByIdInspectHandler(env, parameters)
+			if err != nil {
+				return fmt.Errorf("failed to find user: %w", err)
+			}
+		} else {
+			return fmt.Errorf("invalid payload: %v", payload)
 		}
+	case "address":
+		addressesJson, err := json.Marshal(d.Addresses)
+		if err != nil {
+			return fmt.Errorf("failed to marshal addresses: %w", err)
+		}
+		env.Report(addressesJson)
 	default:
-		return fmt.Errorf("invalid payload: %v", payload)
+		return fmt.Errorf("unknown route: %v", string(payload))
 	}
 	return nil
 }
@@ -342,13 +199,16 @@ func main() {
 		log.Fatalf("Failed to open and connect to database: %v", err)
 	}
 
-	//////////////////////// Setup Ownership //////////////////////////
-	initialOwner := common.HexToAddress("0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266")
+	//////////////////////// Setup Application //////////////////////////
+	deployerPlugin := common.HexToAddress("0x5FbDB2315678afecb367f032d93F642f64180aa3")
+
+	addresses := make(map[string]common.Address)
+	addresses["deployerPlugin"] = deployerPlugin
 
 	///////////////////////// Rollmelette //////////////////////////
 	ctx := context.Background()
 	opts := rollmelette.NewRunOpts()
-	app := NewDeVoltRollup(db, &initialOwner, publicKey)
+	app := NewDeVoltRollup(db, addresses, publicKey)
 	err = rollmelette.Run(ctx, opts, app)
 	if err != nil {
 		slog.Error("application error", "error", err)

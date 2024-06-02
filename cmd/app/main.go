@@ -1,19 +1,18 @@
 package main
 
 import (
-	// ckafka "github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	ckafka "github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	"os"
 	_ "github.com/devolthq/devolt/api"
 	"github.com/devolthq/devolt/configs"
+	"github.com/devolthq/devolt/internal/infra/kafka"
 	"github.com/devolthq/devolt/internal/infra/web/handler"
-	// "github.com/devolthq/devolt/internal/infra/web/middleware"
-	// "github.com/devolthq/devolt/internal/infra/kafka"
-	"github.com/devolthq/devolt/internal/infra/repository"
+	"log"
+	"github.com/devolthq/devolt/internal/infra/database"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/swaggo/files"
-	"github.com/swaggo/gin-swagger"
-	"log"
-	// "os"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 //	@title	Devices Api Server
@@ -33,10 +32,10 @@ import (
 // 	@query.collection.format multi
 
 func main() {
-	// client, err := configs.SetupMongoDB()
-	// if err != nil {
-	// 	log.Fatalf("Failed to connect to MongoDB: %v", err)
-	// }
+	client, err := configs.SetupMongoDB()
+	if err != nil {
+		log.Fatalf("Failed to connect to MongoDB: %v", err)
+	}
 
 	db, err := configs.SetupSQLite()
 	if err != nil {
@@ -44,22 +43,22 @@ func main() {
 	}
 	defer db.Close()
 
-	// producerConfigMap := &ckafka.ConfigMap{
-	// 	"bootstrap.servers": os.Getenv("KAFKA_BOOTSTRAP_SERVER"),
-	// 	"client.id":         os.Getenv("KAFKA_CLIENT_ID"),
-	// }
+	producerConfigMap := &ckafka.ConfigMap{
+		"bootstrap.servers": os.Getenv("KAFKA_BOOTSTRAP_SERVER"),
+		"client.id":         os.Getenv("KAFKA_CLIENT_ID"),
+	}
 
-	// kafkaRepository := kafka.NewKafkaProducer(producerConfigMap)
-	// deviceRepository := repository.NewDeviceRepositoryMongo(client, "mongodb", "devices")
-	// deviceHandlers := handler.NewDeviceHandlers(deviceRepository, kafkaRepository)
+	kafkaRepository := kafka.NewKafkaProducer(producerConfigMap)
+	deviceRepository := database.NewDeviceRepositoryMongo(client, "mongodb", "devices")
+	deviceHandlers := handler.NewDeviceHandlers(deviceRepository, kafkaRepository)
 
-	auctionRepository := repository.NewAuctionRepositorySqlite(db)
+	auctionRepository := database.NewAuctionRepositorySqlite(db)
 	auctionHandlers := handler.NewAuctionHandlers(auctionRepository)
 
-	bidRepository := repository.NewBidRepositorySqlite(db)
+	bidRepository := database.NewBidRepositorySqlite(db)
 	bidHandlers := handler.NewBidHandlers(bidRepository)
 
-	stationRepository := repository.NewStationRepositorySqlite(db)
+	stationRepository := database.NewStationRepositorySqlite(db)
 	stationHandlers := handler.NewStationHandlers(stationRepository)
 
 	router := gin.Default()
@@ -86,14 +85,14 @@ func main() {
 	api.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// ///////////////////// Devices //////////////////////
-	
-	// {
-	// 	deviceGroup := api.Group("/device")
-	// 	{
-	// 		deviceGroup.GET("", deviceHandlers.FindAllDevicesHandler)
-	// 		deviceGroup.POST("", deviceHandlers.CreateDeviceHandler)
-	// 	}
-	// }
+
+	{
+		deviceGroup := api.Group("/device")
+		{
+			deviceGroup.GET("", deviceHandlers.FindAllDevicesHandler)
+			deviceGroup.POST("", deviceHandlers.CreateDeviceHandler)
+		}
+	}
 
 	///////////////////// Auction /////////////////////
 
