@@ -20,7 +20,7 @@ func NewStationAdvanceHandlers(
 	}
 }
 
-func (h *StationAdvanceHandlers) CreateStationAdvanceHandler(env rollmelette.Env, metadata rollmelette.Metadata, deposit rollmelette.Deposit, payload []byte) error {
+func (h *StationAdvanceHandlers) CreateStationHandler(env rollmelette.Env, metadata rollmelette.Metadata, deposit rollmelette.Deposit, payload []byte) error {
 	var input station_usecase.CreateStationInputDTO
 	if err := json.Unmarshal(payload, &input); err != nil {
 		return fmt.Errorf("failed to unmarshal input: %w", err)
@@ -33,11 +33,11 @@ func (h *StationAdvanceHandlers) CreateStationAdvanceHandler(env rollmelette.Env
 	if err != nil {
 		return err
 	}
-	env.Report([]byte(fmt.Sprintf("created station with id: %v, address: %v and rate: %v", res.Id, res.Owner, res.Rate)))
+	env.Notice([]byte(fmt.Sprintf("created station with id: %v, address: %v and rate: %v", res.Id, res.Owner, res.Rate)))
 	return nil
 }
 
-func (h *StationAdvanceHandlers) UpdateStationAdvanceHandler(env rollmelette.Env, metadata rollmelette.Metadata, deposit rollmelette.Deposit, payload []byte) error {
+func (h *StationAdvanceHandlers) UpdateStationHandler(env rollmelette.Env, metadata rollmelette.Metadata, deposit rollmelette.Deposit, payload []byte) error {
 	var input station_usecase.UpdateStationInputDTO
 	if err := json.Unmarshal(payload, &input); err != nil {
 		return fmt.Errorf("failed to unmarshal input: %w", err)
@@ -49,6 +49,6 @@ func (h *StationAdvanceHandlers) UpdateStationAdvanceHandler(env rollmelette.Env
 	if err != nil {
 		return err
 	}
-	env.Report([]byte(fmt.Sprintf("updated station with id: %v, address: %v and rate: %v", res.Id, res.Owner, res.Rate)))
+	env.Notice([]byte(fmt.Sprintf("updated station with id: %v, address: %v and rate: %v", res.Id, res.Owner, res.Rate)))
 	return nil
 }

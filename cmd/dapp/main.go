@@ -28,7 +28,7 @@ type DeVoltRollup struct {
 	StationRepository entity.StationRepository
 	AuctionRepository entity.AuctionRepository
 	BidRepository     entity.BidRepository
-	Addresses         map[string]common.Address
+	TokenAddress      *common.Address
 	PublicKey         *ecdsa.PublicKey
 }
 
@@ -37,14 +37,14 @@ func NewDeVoltRollup(
 	stationRepository entity.StationRepository,
 	auctionRepository entity.AuctionRepository,
 	bidRepository entity.BidRepository,
-	addresses map[string]common.Address,
+	TokenAddress *common.Address,
 	publicKey *ecdsa.PublicKey) *DeVoltRollup {
 	return &DeVoltRollup{
 		UserRepository:    userRepository,
 		StationRepository: stationRepository,
 		AuctionRepository: auctionRepository,
 		BidRepository:     bidRepository,
-		Addresses:         addresses,
+		TokenAddress:      TokenAddress,
 		PublicKey:         publicKey,
 	}
 }
@@ -58,7 +58,6 @@ func (d *DeVoltRollup) Advance(
 	fmt.Printf("Raw payload: %s\n", string(payload))
 
 	//////////////////////// Decode Input ////////////////////////
-	// TODO: Replace this approach to Cap’n Proto
 	var input *dto.AdvaceInputDTO
 	err := json.Unmarshal(payload, &input)
 	if err != nil {
@@ -66,35 +65,23 @@ func (d *DeVoltRollup) Advance(
 	}
 
 	/////////////////////////// Middleware //////////////////////////
-
 	RBAC := middleware.NewRBACMiddleware(d.UserRepository)
 
-	// ////////////////////////// Handlers //////////////////////////
+	////////////////////////// Handlers //////////////////////////
 	stationAdvanceHandlers := advance_handler.NewStationAdvanceHandlers(d.StationRepository)
-	governanceAdvanceHandlers := advance_handler.NewGovernanceAdvanceHandlers(d.Addresses, d.UserRepository)
+	governanceAdvanceHandlers := advance_handler.NewGovernanceAdvanceHandlers(d.TokenAddress)
 
 	///////////////////////// Router //////////////////////////
 	switch input.Kind {
-	case "tokenAddress":
-		handler := RBAC.Middleware(governanceAdvanceHandlers.SetTokenAddressAdvanceHandler, "admin")
+	case "buy":
+	case "sell":
+	case "cronJob":
+	case "token":
+		handler := RBAC.Middleware(governanceAdvanceHandlers.SetTokenAddress, "admin")
 		if err := handler(env, metadata, deposit, input.Payload); err != nil {
 			return fmt.Errorf("failed to set token address: %w", err)
 		}
-	case "deployerPluginAddress":
-		handler := RBAC.Middleware(governanceAdvanceHandlers.SetDeployerPluginAddressAdvanceHandler, "admin")
-		if err := handler(env, metadata, deposit, input.Payload); err != nil {
-			return fmt.Errorf("failed to set deployer plugin address: %w", err)
-		}
-	case "grantAdminRole":
-		handler := RBAC.Middleware(governanceAdvanceHandlers.GrantAdminRoleAdvanceHandler, "admin")
-		if err := handler(env, metadata, deposit, input.Payload); err != nil {
-			return fmt.Errorf("failed to grant admin role: %w", err)
-		}
-	case "revokeAdminRole":
-		handler := RBAC.Middleware(governanceAdvanceHandlers.RevokeAdminRoleAdvanceHandler, "admin")
-		if err := handler(env, metadata, deposit, input.Payload); err != nil {
-			return fmt.Errorf("failed to revoke admin role: %w", err)
-		}
+	case "withdraw":
 	case "report":
 		////////////////////////// Decode Report //////////////////////////
 		var report *entity.Report
@@ -106,8 +93,8 @@ func (d *DeVoltRollup) Advance(
 			return fmt.Errorf("invalid report: %v", report)
 		}
 		//////////////////////// Process Report //////////////////////////
-		if err := stationAdvanceHandlers.UpdateStationAdvanceHandler(env, metadata, deposit, report.Payload); errors.Is(err, sql.ErrNoRows) {
-			if err := stationAdvanceHandlers.CreateStationAdvanceHandler(env, metadata, deposit, report.Payload); err != nil {
+		if err := stationAdvanceHandlers.UpdateStationHandler(env, metadata, deposit, report.Payload); errors.Is(err, sql.ErrNoRows) {
+			if err := stationAdvanceHandlers.CreateStationHandler(env, metadata, deposit, report.Payload); err != nil {
 				return fmt.Errorf("failed to update or create station: %w", err)
 			}
 		} else if err != nil {
@@ -132,14 +119,14 @@ func (d *DeVoltRollup) Inspect(env rollmelette.EnvInspector, payload []byte) err
 			return fmt.Errorf("invalid payload: %v", payload)
 		}
 	case "auction":
-		auctionInpectHandlers := inspect_handler.NewAuctionInspectHandlers(d.AuctionRepository)
+		auctionInspectHandlers := inspect_handler.NewAuctionInspectHandlers(d.AuctionRepository)
 		if len(parameters) == 1 {
-			err := auctionInpectHandlers.FindAllAuctionsInspectHandler(env, parameters)
+			err := auctionInspectHandlers.FindAllAuctionsInspectHandler(env, parameters)
 			if err != nil {
 				return fmt.Errorf("failed to find all auctions: %w", err)
 			}
 		} else if len(parameters) == 2 {
-			err := auctionInpectHandlers.FindAuctionByIdInspectHandler(env, parameters)
+			err := auctionInspectHandlers.FindAuctionByIdInspectHandler(env, parameters)
 			if err != nil {
 				return fmt.Errorf("failed to find auction: %w", err)
 			}
@@ -147,14 +134,14 @@ func (d *DeVoltRollup) Inspect(env rollmelette.EnvInspector, payload []byte) err
 			return fmt.Errorf("invalid payload: %v", payload)
 		}
 	case "bid":
-		bidInpectHandlers := inspect_handler.NewBidInspectHandlers(d.BidRepository)
+		bidInspectHandlers := inspect_handler.NewBidInspectHandlers(d.BidRepository)
 		if len(parameters) == 1 {
-			err := bidInpectHandlers.FindAllBidsInspectHandler(env, parameters)
+			err := bidInspectHandlers.FindAllBidsInspectHandler(env, parameters)
 			if err != nil {
 				return fmt.Errorf("failed to find all bids: %w", err)
 			}
 		} else if len(parameters) == 2 {
-			err := bidInpectHandlers.FindBidByIdInspectHandler(env, parameters)
+			err := bidInspectHandlers.FindBidByIdInspectHandler(env, parameters)
 			if err != nil {
 				return fmt.Errorf("failed to find bid: %w", err)
 			}
@@ -162,26 +149,26 @@ func (d *DeVoltRollup) Inspect(env rollmelette.EnvInspector, payload []byte) err
 			return fmt.Errorf("invalid payload: %v", payload)
 		}
 	case "user":
-		userInpectHandlers := inspect_handler.NewUserInspectHandlers(d.UserRepository)
+		userInspectHandlers := inspect_handler.NewUserInspectHandlers(d.UserRepository)
 		if len(parameters) == 1 {
-			err := userInpectHandlers.FindAllUsersInspectHandler(env, parameters)
+			err := userInspectHandlers.FindAllUsersInspectHandler(env, parameters)
 			if err != nil {
 				return fmt.Errorf("failed to find all users: %w", err)
 			}
 		} else if len(parameters) == 2 {
-			err := userInpectHandlers.FindUserByIdInspectHandler(env, parameters)
+			err := userInspectHandlers.FindUserByIdInspectHandler(env, parameters)
 			if err != nil {
 				return fmt.Errorf("failed to find user: %w", err)
 			}
 		} else {
 			return fmt.Errorf("invalid payload: %v", payload)
 		}
-	case "address":
-		addressesJson, err := json.Marshal(d.Addresses)
+	case "token":
+		addressJson, err := json.Marshal(d.TokenAddress)
 		if err != nil {
 			return fmt.Errorf("failed to marshal addresses: %w", err)
 		}
-		env.Report(addressesJson)
+		env.Report(addressJson)
 	default:
 		return fmt.Errorf("unknown route: %v", string(payload))
 	}
@@ -201,21 +188,17 @@ func main() {
 	}
 
 	//////////////////////// Repositories //////////////////////////
-
 	stationRepository := database.NewStationRepositorySqlite(db)
 	userRepository := database.NewUserRepositorySqlite(db)
 	auctionRepository := database.NewAuctionRepositorySqlite(db)
 	bidRepository := database.NewBidRepositorySqlite(db)
 
 	//////////////////////// Setup Application //////////////////////////
+	var addresses *common.Address
 
-	deployerPlugin := common.HexToAddress("0x5FbDB2315678afecb367f032d93F642f64180aa3")
-	addresses := make(map[string]common.Address)
-	addresses["deployerPlugin"] = deployerPlugin
-
-	initialOrder := common.HexToAddress("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266")
+	initialOwner := common.HexToAddress("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266")
 	if _, err = user_usecase.NewCreateUserUseCase(userRepository).Execute(&user_usecase.CreateUserInputDTO{
-		Address: initialOrder,
+		Address: initialOwner,
 		Role:    "admin",
 	}); err != nil {
 		slog.Error("failed to create initial order", "error", err)

@@ -22,7 +22,7 @@ func main() {
 		panic(err)
 	}
 	privateKeyPEM := &pem.Block{
-		Type:  "EC PRIVATE KEY",
+		Type:  "ECDSA PRIVATE KEY",
 		Bytes: privateKeyBytes,
 	}
 
@@ -31,7 +31,7 @@ func main() {
 		panic(err)
 	}
 	publicKeyPEM := &pem.Block{
-		Type:  "PUBLIC KEY",
+		Type:  "ECDSA PUBLIC KEY",
 		Bytes: publicKeyBytes,
 	}
 
@@ -49,7 +49,7 @@ func main() {
 	if err := pem.Encode(privateKeyFile, privateKeyPEM); err != nil {
 		panic(err)
 	}
-	log.Printf("Arquivo .pem para chave privada criado em: %s", privateKeyFilePath)
+	log.Printf(".pem archive for private key created in: %s", privateKeyFilePath)
 
 	publicKeyFilePath := filepath.Join(dir, "public_key.pem")
 	publicKeyFile, err := os.Create(publicKeyFilePath)
@@ -60,5 +60,5 @@ func main() {
 	if err := pem.Encode(publicKeyFile, publicKeyPEM); err != nil {
 		panic(err)
 	}
-	log.Printf("Arquivo .pem para chave pública criado em: %s", publicKeyFilePath)
+	log.Printf(".pem archive for public key created in: %s", publicKeyFilePath)
 }

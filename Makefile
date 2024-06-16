@@ -40,16 +40,16 @@ infra:
 .PHONY: dev
 dev:
 	$(START_LOG)
-	@nonodo -- go run ./cmd/rollup/
+	@nonodo -- go run ./cmd/dapp/
 	$(END_LOG)
 
 .PHONY: build
 build:
 	$(START_LOG)
 	@docker build \
-		-t rollup:latest \
-		-f ./build/Dockerfile.rollup .
-	@cartesi build --from-image rollup:latest
+		-t dapp:latest \
+		-f ./build/Dockerfile.dapp .
+	@cartesi build --from-image dapp:latest
 	$(END_LOG)
 
 .PHONY: iot
@@ -80,7 +80,7 @@ generate:
 .PHONY: test
 test:
 	@cd contracts && forge test
-	@go test ./... -coverprofile=./test/coverage_sheet.md -v
+	@go test ./... -coverprofile=./coverage_sheet.md -v
 
 .PHONY: deploy
 deploy:

@@ -9,7 +9,7 @@ import (
 	"github.com/rollmelette/rollmelette"
 )
 
-type FunctType func(env rollmelette.Env, metadata rollmelette.Metadata, deposit rollmelette.Deposit, payload []byte) error
+type AdvanceFunctType func(env rollmelette.Env, metadata rollmelette.Metadata, deposit rollmelette.Deposit, payload []byte) error
 
 type RBACMiddleware struct {
 	UserRepository entity.UserRepository
@@ -21,7 +21,7 @@ func NewRBACMiddleware(userRepository entity.UserRepository) *RBACMiddleware {
 	}
 }
 
-func (m *RBACMiddleware) Middleware(f FunctType, role string) FunctType {
+func (m *RBACMiddleware) Middleware(f AdvanceFunctType, role string) AdvanceFunctType {
 	return func(env rollmelette.Env, metadata rollmelette.Metadata, deposit rollmelette.Deposit, payload []byte) error {
 		findUserByAddress := user_usecase.NewFindUserByAddressUseCase(m.UserRepository)
 		user, err := findUserByAddress.Execute(&user_usecase.FindUserByAddressInputDTO{

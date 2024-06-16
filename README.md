@@ -1,10 +1,11 @@
 # Roadmap
-- [ ] Rollup with cartesi;
 - [ ] Tests;
-- [ ] Implement gRPC instead of kafka topic to create station from handler. [reference](https://github.com/devfullcycle/goexpert/blob/main/20-CleanArch/cmd/ordersystem/main.go#L53)
+- [ ] Implement router for cartesi;
+- [ ] Implement Wire for automatic dependency injection. [reference](https://github.com/google/wire);
+- [ ] Implement message acknowledgement on kafka topic to create station from handler. [reference](https://github.com/devfullcycle/goexpert/blob/main/20-CleanArch/cmd/ordersystem/main.go#L53);
 - [ ] Actualize all GetEnvs to LookupEnv;
-- [ ] Docs with starlight;
 - [ ] README.md with business part and also all entrypoints;
+- [ ] Setup air for development;
 - [x] Create configuration files instead of settings in file to setup mongodb, sqlite, and others;
 - [x] Change rollup Dockerfile to build with the repository;
 - [x] Sign the simulation payload with ECDSA;
@@ -19,8 +20,6 @@
 - [ ] First hardware impl with raspberry pi pico 2W or raspberry pi pico W or other microcontroller;
 - [ ] Integration with w3bstream/sprout IOTEX;
 - [ ] P&D with ERC4337;
-- [ ] Implement Cap’n Proto for deserialization -> dapp backend router (switch|case);
-- [ ] Implement Multisig wallet for stations
 
 ## Mainnet Step
 - [ ] Cloud support with pulumi, aws, hivemq-cloud and confluent cloud;
