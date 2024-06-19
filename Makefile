@@ -47,8 +47,8 @@ dev:
 build:
 	$(START_LOG)
 	@docker build \
-		-t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
-		-f ./build/Dockerfile.server .
+		-t dapp:latest \
+		-f ./build/Dockerfile.dapp .
 	@cartesi build --from-image dapp:latest
 	$(END_LOG)
 
