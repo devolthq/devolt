@@ -19,7 +19,7 @@ func NewGovernanceAdvanceHandlers(
 	}
 }
 
-func (h *GovernanceAdvanceHandlers) SetTokenAddress(env rollmelette.Env, metadata rollmelette.Metadata, deposit rollmelette.Deposit, payload []byte) error {
+func (h *GovernanceAdvanceHandlers) SetTokenAddressHandler(env rollmelette.Env, metadata rollmelette.Metadata, deposit rollmelette.Deposit, payload []byte) error {
 	var NewTokenAddress *common.Address
 	if err := json.Unmarshal(payload, &NewTokenAddress); err != nil {
 		return err
@@ -29,14 +29,8 @@ func (h *GovernanceAdvanceHandlers) SetTokenAddress(env rollmelette.Env, metadat
 	return nil
 }
 
-// func (h *GovernanceAdvanceHandlers) grantRole(env rollmelette.Env, metadata rollmelette.Metadata, deposit rollmelette.Deposit, payload []byte) error {
-// 	return nil
-// }
-
-// func (h *GovernanceAdvanceHandlers) revokeRole(env rollmelette.Env, metadata rollmelette.Metadata, deposit rollmelette.Deposit, payload []byte) error {
-// 	return nil
-// }
-
-// func (h *GovernanceAdvanceHandlers) renounceRole(env rollmelette.Env, metadata rollmelette.Metadata, deposit rollmelette.Deposit, payload []byte) error {
-// 	return nil
-// }
+func (h *GovernanceAdvanceHandlers) WithdrawHandler(env rollmelette.Env, metadata rollmelette.Metadata, deposit rollmelette.Deposit, payload []byte) error {
+	// first check if msg.sender has the require amount
+	// second create 
+	return nil
+}

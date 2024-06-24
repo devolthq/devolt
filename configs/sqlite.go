@@ -8,7 +8,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func SetupSQLite() (*sqlx.DB, error) {
+func SetupSqlite() (*sqlx.DB, error) {
 	os.Remove("./devolt.db")
 	
 	db, err := sqlx.Open("sqlite3", ":memory:")

@@ -36,13 +36,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to MongoDB: %v", err)
 	}
-
-	db, err := configs.SetupSQLite()
-	if err != nil {
-		log.Fatalf("Failed to connect to SQLite: %v", err)
-	}
-	defer db.Close()
-
+	
 	producerConfigMap := &ckafka.ConfigMap{
 		"bootstrap.servers": os.Getenv("KAFKA_BOOTSTRAP_SERVER"),
 		"client.id":         os.Getenv("KAFKA_CLIENT_ID"),
