@@ -20,8 +20,8 @@ func NewBidInspectHandlers(bidRepository entity.BidRepository) *BidInspectHandle
 	}
 }
 
-func (h *BidInspectHandlers) FindBidByIdInspectHandler(env rollmelette.EnvInspector, payload []string) error {
-	id, err := strconv.Atoi(payload[1])
+func (h *BidInspectHandlers) FindBidByIdInspectHandler(env rollmelette.EnvInspector, payload []byte) error {
+	id, err := strconv.Atoi(string(payload))
 	if err != nil {
 		return fmt.Errorf("failed to parse id into int: %v", payload)
 	}
@@ -40,7 +40,7 @@ func (h *BidInspectHandlers) FindBidByIdInspectHandler(env rollmelette.EnvInspec
 	return nil
 }
 
-func (h *BidInspectHandlers) FindAllBidsInspectHandler(env rollmelette.EnvInspector, payload []string) error {
+func (h *BidInspectHandlers) FindAllBidsInspectHandler(env rollmelette.EnvInspector, payload []byte) error {
 	findAllBids := bid_usecase.NewFindAllBidsUseCase(h.BidRepository)
 	res, err := findAllBids.Execute()
 	if err != nil {

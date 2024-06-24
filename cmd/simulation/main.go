@@ -13,7 +13,7 @@ import (
 	"github.com/devolthq/devolt/internal/infra/database"
 	"github.com/devolthq/devolt/internal/infra/kafka"
 	"github.com/devolthq/devolt/internal/usecase/device_usecase"
-	"github.com/devolthq/devolt/pkg/router"
+	"github.com/devolthq/devolt/pkg/rollmelette_router"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 )
 
@@ -98,7 +98,7 @@ func main() {
 					}
 
 					// TODO: use capnp instead
-					deviceInputData := router.AdvanceRequest{
+					deviceInputData := rollmelette_router.AdvanceRequest{
 						Path:    "report",
 						Payload: jsonBytesReport,
 					}
@@ -169,7 +169,7 @@ func main() {
 				}
 
 				// TODO: use capnp instead
-				deviceInputData := router.AdvanceRequest{
+				deviceInputData := rollmelette_router.AdvanceRequest{
 					Path:    "report",
 					Payload: jsonBytesReport,
 				}

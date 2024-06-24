@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/devolthq/devolt/internal/domain/entity"
-	"github.com/devolthq/devolt/pkg/router"
+	"github.com/devolthq/devolt/pkg/rollmelette_router"
 	"github.com/rollmelette/rollmelette"
 )
 
@@ -20,7 +20,7 @@ func NewECDSAMiddleware(publicKey *ecdsa.PublicKey) *ECDSAMiddleware {
 	}
 }
 
-func (m ECDSAMiddleware) Middleware(handlerFunc router.AdvanceHandlerFunc) router.AdvanceHandlerFunc {
+func (m ECDSAMiddleware) Middleware(handlerFunc rollmelette_router.AdvanceHandlerFunc) rollmelette_router.AdvanceHandlerFunc {
 	return func(env rollmelette.Env, metadata rollmelette.Metadata, deposit rollmelette.Deposit, payload []byte) error {
 	//TODO: use a transformer instead of this
 	var report *entity.Report

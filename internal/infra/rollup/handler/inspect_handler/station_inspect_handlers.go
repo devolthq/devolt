@@ -18,13 +18,13 @@ func NewStationInspectHandlers(stationRepository entity.StationRepository) *Stat
 	}
 }
 
-func (h *StationInspectHandlers) FindStationByIdInspectHandler(env rollmelette.EnvInspector, payload []string) error {
+func (h *StationInspectHandlers) FindStationByIdInspectHandler(env rollmelette.EnvInspector, payload []byte) error {
 	findStationById := station_usecase.NewFindStationByIdUseCase(h.StationRepository)
 	res, err := findStationById.Execute(&station_usecase.FindStationByIdInputDTO{
-		Id: payload[1],
+		Id: string(payload),
 	})
 	if err != nil {
-		return fmt.Errorf("failed to find station: %w", err)
+		return fmt.Errorf("failed to find station by id: %w from id: %s", err, string(payload))
 	}
 	station, err := json.Marshal(res)
 	if err != nil {
@@ -34,7 +34,7 @@ func (h *StationInspectHandlers) FindStationByIdInspectHandler(env rollmelette.E
 	return nil
 }
 
-func (h *StationInspectHandlers) FindAllStationsInspectHandler(env rollmelette.EnvInspector, payload []string) error {
+func (h *StationInspectHandlers) FindAllStationsInspectHandler(env rollmelette.EnvInspector, payload []byte) error {
 	findAllStationsUseCase := station_usecase.NewFindAllStationsUseCase(h.StationRepository)
 	res, err := findAllStationsUseCase.Execute()
 	if err != nil {

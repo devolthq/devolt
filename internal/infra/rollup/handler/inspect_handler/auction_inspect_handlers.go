@@ -19,8 +19,8 @@ func NewAuctionInspectHandlers(auctionRepository entity.AuctionRepository) *Auct
 	}
 }
 
-func (h *AuctionInspectHandlers) FindAuctionByIdInspectHandler(env rollmelette.EnvInspector, payload []string) error {
-	id, err := strconv.Atoi(payload[1])
+func (h *AuctionInspectHandlers) FindAuctionByIdInspectHandler(env rollmelette.EnvInspector, payload []byte) error {
+	id, err := strconv.Atoi(string(payload))
 	if err != nil {
 		return fmt.Errorf("failed to parse id into int: %v", payload)
 	}
@@ -39,7 +39,7 @@ func (h *AuctionInspectHandlers) FindAuctionByIdInspectHandler(env rollmelette.E
 	return nil
 }
 
-func (h *AuctionInspectHandlers) FindAllAuctionsInspectHandler(env rollmelette.EnvInspector, payload []string) error {
+func (h *AuctionInspectHandlers) FindAllAuctionsInspectHandler(env rollmelette.EnvInspector, payload []byte) error {
 	findAllAuctionsUseCase := auction_usecase.NewFindAllAuctionsUseCase(h.AuctionRepository)
 	res, err := findAllAuctionsUseCase.Execute()
 	if err != nil {
