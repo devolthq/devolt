@@ -1,7 +1,7 @@
 package inspect_handler
 
 import (
-	"context"
+	// "context"
 	"encoding/json"
 	"fmt"
 
@@ -20,20 +20,20 @@ func NewUserInspectHandlers(userRepository entity.UserRepository) *UserInspectHa
 	}
 }
 
-func (h *UserInspectHandlers) FindUserByIdInspectHandler(env rollmelette.EnvInspector, ctx context.Context) error {	
-	findUserById := user_usecase.NewFindUserByIdUseCase(h.UserRepository)
-	res, err := findUserById.Execute(&user_usecase.FindUserByIdInputDTO{
-		Id: ctx.Value("id").(int),})
-	if err != nil {
-		return fmt.Errorf("failed to find User: %w", err)
-	}
-	User, err := json.Marshal(res)
-	if err != nil {
-		return fmt.Errorf("failed to marshal User: %w", err)
-	}
-	env.Report(User)
-	return nil
-}
+// func (h *UserInspectHandlers) FindUserByIdInspectHandler(env rollmelette.EnvInspector, ctx context.Context) error {	
+// 	findUserById := user_usecase.NewFindUserByIdUseCase(h.UserRepository)
+// 	res, err := findUserById.Execute(&user_usecase.FindUserByIdInputDTO{
+// 		Id: ctx.Value("id").(int),})
+// 	if err != nil {
+// 		return fmt.Errorf("failed to find User: %w", err)
+// 	}
+// 	User, err := json.Marshal(res)
+// 	if err != nil {
+// 		return fmt.Errorf("failed to marshal User: %w", err)
+// 	}
+// 	env.Report(User)
+// 	return nil
+// }
 
 func (h *UserInspectHandlers) FindUserByAddressInspectHandler(env rollmelette.EnvInspector, payload []string) error {
 	var input user_usecase.FindUserByAddressInputDTO
