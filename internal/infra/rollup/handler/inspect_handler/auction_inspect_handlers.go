@@ -1,12 +1,14 @@
 package inspect_handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
+
 	"github.com/devolthq/devolt/internal/domain/entity"
 	"github.com/devolthq/devolt/internal/usecase/auction_usecase"
 	"github.com/rollmelette/rollmelette"
-	"strconv"
 )
 
 type AuctionInspectHandlers struct {
@@ -19,10 +21,10 @@ func NewAuctionInspectHandlers(auctionRepository entity.AuctionRepository) *Auct
 	}
 }
 
-func (h *AuctionInspectHandlers) FindAuctionByIdInspectHandler(env rollmelette.EnvInspector, payload []byte) error {
-	id, err := strconv.Atoi(string(payload))
+func (h *AuctionInspectHandlers) FindAuctionByIdInspectHandler(env rollmelette.EnvInspector, ctx context.Context) error {
+	id, err := strconv.Atoi(ctx.Value("id").(string))
 	if err != nil {
-		return fmt.Errorf("failed to parse id into int: %v", payload)
+		return fmt.Errorf("failed to parse id into int: %v", ctx.Value("id").(string))
 	}
 	findAuctionById := auction_usecase.NewFindAuctionByIdUseCase(h.AuctionRepository)
 	res, err := findAuctionById.Execute(&auction_usecase.FindAuctionByIdInputDTO{
@@ -39,7 +41,7 @@ func (h *AuctionInspectHandlers) FindAuctionByIdInspectHandler(env rollmelette.E
 	return nil
 }
 
-func (h *AuctionInspectHandlers) FindAllAuctionsInspectHandler(env rollmelette.EnvInspector, payload []byte) error {
+func (h *AuctionInspectHandlers) FindAllAuctionsInspectHandler(env rollmelette.EnvInspector, ctx context.Context) error {
 	findAllAuctionsUseCase := auction_usecase.NewFindAllAuctionsUseCase(h.AuctionRepository)
 	res, err := findAllAuctionsUseCase.Execute()
 	if err != nil {

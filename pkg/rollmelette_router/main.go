@@ -1,16 +1,19 @@
 package rollmelette_router
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"regexp"
+
 	// "strings"
 
 	"github.com/rollmelette/rollmelette"
 )
 
 type AdvanceHandlerFunc func(env rollmelette.Env, metadata rollmelette.Metadata, deposit rollmelette.Deposit, payload []byte) error
-type InspectHandlerFunc func(env rollmelette.EnvInspector, payload []byte) error
+type InspectHandlerFunc func(env rollmelette.EnvInspector, ctx context.Context) error
 
 type Router struct {
 	AdvanceHandlers map[string]AdvanceHandlerFunc
@@ -41,19 +44,8 @@ func (r *Router) parseAdvanceRawPayload(rawRequest []byte) (*AdvanceRequest, err
 	return &input, nil
 }
 
-// func (r *Router) parseInspectRawPayload(rawRequest []byte) (*InspectRequest, error) {
-// 	input := InspectRequest{
-// 		Path: string(rawRequest),
-// 	}
-// 	return &input, nil
-// }
-
 func (r *Router) HandleAdvance(path string, handler AdvanceHandlerFunc) {
 	r.AdvanceHandlers[path] = handler
-}
-
-func (r *Router) HandleInspect(path string, handler InspectHandlerFunc) {
-	r.InspectHandlers[path] = handler
 }
 
 func (r *Router) Advance(env rollmelette.Env, metadata rollmelette.Metadata, deposit rollmelette.Deposit, payload []byte) error {
@@ -74,50 +66,33 @@ func (r *Router) Advance(env rollmelette.Env, metadata rollmelette.Metadata, dep
 	return nil
 }
 
-func (r *Router) Inspect(env rollmelette.EnvInspector, payload []byte) error {
-	// input, err := r.parseInspectRawPayload(payload)
-	// if err != nil {
-	// 	return fmt.Errorf("failed to parse input: %w", err)
-	// }
-	
-	// slog.Debug("Router", "path", input.Path)
-	
-	// handler, err := r.matchInspectPath(input.Path)
-	// if err != nil {
-	// 	return fmt.Errorf("failed to match path: %w", err)
-	// }
-
-	// if err := handler(env, payload); err != nil {
-	// 	return fmt.Errorf("failed to handle action '%s': %w", input.Path, err)
-	// }
-	return nil
+func (r *Router) HandleInspect(path string, handler InspectHandlerFunc) {
+	pattern := transformBracePattern(path)
+	r.InspectHandlers[pattern] = handler
 }
 
-// func (r *Router) matchInspectPath(path string) (InspectHandlerFunc, error) {
-// 	for pattern, handler := range r.InspectHandlers {
-// 		if matchPath(pattern, path) {
-// 			return handler, nil
-// 		}
-// 	}
-// 	return nil, fmt.Errorf("path '%s' not found", path)
-// }
+func transformBracePattern(pattern string) string {
+	pattern = "^" + pattern + "$"
+	return regexp.MustCompile(`\{([^}]+)\}`).ReplaceAllStringFunc(pattern, func(m string) string {
+		paramName := m[1 : len(m)-1]
+		return fmt.Sprintf(`(?P<%s>[^/]+)`, paramName)
+	})
+}
 
-// func matchPath(pattern, path string) bool {
-// 	patternParts := strings.Split(pattern, "/")
-// 	pathParts := strings.Split(path, "/")
-
-// 	if len(patternParts) != len(pathParts) {
-// 		return false
-// 	}
-
-// 	for i, part := range patternParts {
-// 		if strings.HasPrefix(part, ":") {
-// 			continue
-// 		}
-// 		if part != pathParts[i] {
-// 			return false
-// 		}
-// 	}
-
-// 	return true
-// }
+func (r *Router) Inspect(env rollmelette.EnvInspector, payload []byte) error {
+	requestPath := string(payload)
+	ctx := context.Background()
+	for pattern, handler := range r.InspectHandlers {
+		regex := regexp.MustCompile(pattern)
+		matches := regex.FindStringSubmatch(requestPath)
+		if matches != nil {
+			for i, name := range regex.SubexpNames() {
+				if i > 0 && name != "" && i < len(matches) {
+					ctx = context.WithValue(ctx, name, matches[i])
+				}
+			}
+			return handler(env, ctx)
+		}
+	}
+	return fmt.Errorf("no handler found for request: %s", requestPath)
+}

@@ -1,6 +1,7 @@
 package inspect_handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -20,10 +21,10 @@ func NewBidInspectHandlers(bidRepository entity.BidRepository) *BidInspectHandle
 	}
 }
 
-func (h *BidInspectHandlers) FindBidByIdInspectHandler(env rollmelette.EnvInspector, payload []byte) error {
-	id, err := strconv.Atoi(string(payload))
+func (h *BidInspectHandlers) FindBidByIdInspectHandler(env rollmelette.EnvInspector, ctx context.Context) error {
+	id, err := strconv.Atoi(ctx.Value("id").(string))
 	if err != nil {
-		return fmt.Errorf("failed to parse id into int: %v", payload)
+		return fmt.Errorf("failed to parse id into int: %v", ctx.Value("id").(string))
 	}
 	findBidById := bid_usecase.NewFindBidByIdUseCase(h.BidRepository)
 	res, err := findBidById.Execute(&bid_usecase.FindBidByIdInputDTO{
@@ -40,7 +41,7 @@ func (h *BidInspectHandlers) FindBidByIdInspectHandler(env rollmelette.EnvInspec
 	return nil
 }
 
-func (h *BidInspectHandlers) FindAllBidsInspectHandler(env rollmelette.EnvInspector, payload []byte) error {
+func (h *BidInspectHandlers) FindAllBidsInspectHandler(env rollmelette.EnvInspector, ctx context.Context) error {
 	findAllBids := bid_usecase.NewFindAllBidsUseCase(h.BidRepository)
 	res, err := findAllBids.Execute()
 	if err != nil {

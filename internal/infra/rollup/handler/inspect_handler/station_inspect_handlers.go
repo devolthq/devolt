@@ -1,8 +1,10 @@
 package inspect_handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/devolthq/devolt/internal/domain/entity"
 	"github.com/devolthq/devolt/internal/usecase/station_usecase"
 	"github.com/rollmelette/rollmelette"
@@ -18,13 +20,13 @@ func NewStationInspectHandlers(stationRepository entity.StationRepository) *Stat
 	}
 }
 
-func (h *StationInspectHandlers) FindStationByIdInspectHandler(env rollmelette.EnvInspector, payload []byte) error {
+func (h *StationInspectHandlers) FindStationByIdInspectHandler(env rollmelette.EnvInspector, ctx context.Context) error {
 	findStationById := station_usecase.NewFindStationByIdUseCase(h.StationRepository)
 	res, err := findStationById.Execute(&station_usecase.FindStationByIdInputDTO{
-		Id: string(payload),
+		Id: ctx.Value("id").(string),
 	})
 	if err != nil {
-		return fmt.Errorf("failed to find station by id: %w from id: %s", err, string(payload))
+		return fmt.Errorf("failed to find station by id: %w from id: %s", err, ctx.Value("id").(string))
 	}
 	station, err := json.Marshal(res)
 	if err != nil {
@@ -34,7 +36,7 @@ func (h *StationInspectHandlers) FindStationByIdInspectHandler(env rollmelette.E
 	return nil
 }
 
-func (h *StationInspectHandlers) FindAllStationsInspectHandler(env rollmelette.EnvInspector, payload []byte) error {
+func (h *StationInspectHandlers) FindAllStationsInspectHandler(env rollmelette.EnvInspector, ctx context.Context) error {
 	findAllStationsUseCase := station_usecase.NewFindAllStationsUseCase(h.StationRepository)
 	res, err := findAllStationsUseCase.Execute()
 	if err != nil {

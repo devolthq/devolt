@@ -7,7 +7,7 @@ import (
 	"github.com/devolthq/devolt/configs"
 	"github.com/devolthq/devolt/internal/infra/database"
 	"github.com/devolthq/devolt/internal/infra/rollup/handler/advance_handler"
-	// "github.com/devolthq/devolt/internal/infra/rollup/handler/inspect_handler"
+	"github.com/devolthq/devolt/internal/infra/rollup/handler/inspect_handler"
 	"github.com/devolthq/devolt/internal/infra/rollup/middleware"
 	"github.com/devolthq/devolt/internal/usecase/user_usecase"
 	"github.com/devolthq/devolt/pkg/rollmelette_router"
@@ -29,8 +29,8 @@ func main() {
 	//////////////////////// Repositories //////////////////////////
 	stationRepository := database.NewStationRepositorySqlite(db)
 	userRepository := database.NewUserRepositorySqlite(db)
-	// auctionRepository := database.NewAuctionRepositorySqlite(db)
-	// bidRepository := database.NewBidRepositorySqlite(db)
+	auctionRepository := database.NewAuctionRepositorySqlite(db)
+	bidRepository := database.NewBidRepositorySqlite(db)
 
 	//////////////////////// Setup Application //////////////////////////
 	var addresses common.Address
@@ -49,21 +49,21 @@ func main() {
 	//////////////////////// Handlers ////////////////////////
 	governanceAdvanceHandlers := advance_handler.NewGovernanceAdvanceHandlers(&addresses)
 	stationAdvanceHandlers := advance_handler.NewStationAdvanceHandlers(stationRepository, publicKey)
-	// stationInpectHandlers := inspect_handler.NewStationInspectHandlers(stationRepository)
-	// auctionHandlers := inspect_handler.NewAuctionInspectHandlers(auctionRepository)
-	// bidHandlers := inspect_handler.NewBidInspectHandlers(bidRepository)
+	stationInpectHandlers := inspect_handler.NewStationInspectHandlers(stationRepository)
+	auctionHandlers := inspect_handler.NewAuctionInspectHandlers(auctionRepository)
+	bidHandlers := inspect_handler.NewBidInspectHandlers(bidRepository)
 
 	//////////////////////// Setup Router //////////////////////////
 	dapp := rollmelette_router.NewRouter()
 	dapp.HandleAdvance("report", ECDSA.Middleware(stationAdvanceHandlers.ReportHandler))
 	dapp.HandleAdvance("station", RBAC.Middleware(stationAdvanceHandlers.CreateStationHandler, "admin"))
 	dapp.HandleAdvance("token", RBAC.Middleware(governanceAdvanceHandlers.SetTokenAddressHandler, "admin"))
-	// dapp.HandleInspect("station", stationInpectHandlers.FindAllStationsInspectHandler)
-	// dapp.HandleInspect("station/:id", stationInpectHandlers.FindStationByIdInspectHandler)
-	// dapp.HandleInspect("bid", bidHandlers.FindAllBidsInspectHandler)
-	// dapp.HandleInspect("bid/:id", bidHandlers.FindBidByIdInspectHandler)
-	// dapp.HandleInspect("auction", auctionHandlers.FindAllAuctionsInspectHandler)
-	// dapp.HandleInspect("auction/:id", auctionHandlers.FindAuctionByIdInspectHandler)
+	dapp.HandleInspect("station", stationInpectHandlers.FindAllStationsInspectHandler)
+	dapp.HandleInspect("station/{id}", stationInpectHandlers.FindStationByIdInspectHandler)
+	dapp.HandleInspect("bid", bidHandlers.FindAllBidsInspectHandler)
+	dapp.HandleInspect("bid/{id}", bidHandlers.FindBidByIdInspectHandler)
+	dapp.HandleInspect("auction", auctionHandlers.FindAllAuctionsInspectHandler)
+	dapp.HandleInspect("auction/{id}", auctionHandlers.FindAuctionByIdInspectHandler)
 
 	///////////////////////// Rollmelette //////////////////////////
 	ctx := context.Background()
