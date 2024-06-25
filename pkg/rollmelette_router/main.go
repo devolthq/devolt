@@ -82,18 +82,18 @@ func transformBracePattern(pattern string) string {
 }
 
 func (r *Router) Inspect(env rollmelette.EnvInspector, payload []byte) error {
-    requestPath := string(payload)
-    ctx := context.Background()
-    for _, handlerInfo := range r.InspectHandlers {
-        matches := handlerInfo.Regex.FindStringSubmatch(requestPath)
+    request := string(payload)
+    for _, handler := range r.InspectHandlers {
+        matches := handler.Regex.FindStringSubmatch(request)
         if matches != nil {
-            for i, name := range handlerInfo.Regex.SubexpNames() {
+            ctx := context.Background()
+            for i, name := range handler.Regex.SubexpNames() {
                 if i > 0 && name != "" && i < len(matches) {
                     ctx = context.WithValue(ctx, ctxKey(name), matches[i])
                 }
             }
-            return handlerInfo.Handler(env, ctx)
+            return handler.Handler(env, ctx)
         }
     }
-    return fmt.Errorf("no handler found for request: %s", requestPath)
+    return fmt.Errorf("no handler found for request: %s", request)
 }

@@ -23,9 +23,9 @@ func NewAuctionInspectHandlers(auctionRepository entity.AuctionRepository) *Auct
 }
 
 func (h *AuctionInspectHandlers) FindAuctionByIdInspectHandler(env rollmelette.EnvInspector, ctx context.Context) error {
-	id, err := strconv.Atoi(rollmelette_router.GetValue(ctx, "id"))
+	id, err := strconv.Atoi(rollmelette_router.PathValue(ctx, "id"))
 	if err != nil {
-		return fmt.Errorf("failed to parse id into int: %v", rollmelette_router.GetValue(ctx, "id"))
+		return fmt.Errorf("failed to parse id into int: %v", rollmelette_router.PathValue(ctx, "id"))
 	}
 	findAuctionById := auction_usecase.NewFindAuctionByIdUseCase(h.AuctionRepository)
 	res, err := findAuctionById.Execute(&auction_usecase.FindAuctionByIdInputDTO{
