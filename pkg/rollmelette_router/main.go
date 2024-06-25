@@ -9,6 +9,8 @@ import (
     "github.com/rollmelette/rollmelette"
 )
 
+type ctxKey string
+
 type AdvanceHandlerFunc func(env rollmelette.Env, metadata rollmelette.Metadata, deposit rollmelette.Deposit, payload []byte) error
 type InspectHandlerFunc func(env rollmelette.EnvInspector, ctx context.Context) error
 
@@ -87,7 +89,7 @@ func (r *Router) Inspect(env rollmelette.EnvInspector, payload []byte) error {
         if matches != nil {
             for i, name := range handlerInfo.Regex.SubexpNames() {
                 if i > 0 && name != "" && i < len(matches) {
-                    ctx = context.WithValue(ctx, name, matches[i])
+                    ctx = context.WithValue(ctx, ctxKey(name), matches[i])
                 }
             }
             return handlerInfo.Handler(env, ctx)
