@@ -24,10 +24,10 @@ func NewStationInspectHandlers(stationRepository entity.StationRepository) *Stat
 func (h *StationInspectHandlers) FindStationByIdInspectHandler(env rollmelette.EnvInspector, ctx context.Context) error {
 	findStationById := station_usecase.NewFindStationByIdUseCase(h.StationRepository)
 	res, err := findStationById.Execute(&station_usecase.FindStationByIdInputDTO{
-		Id: rollmelette_router.GetValue(ctx, "id"),
+		Id: rollmelette_router.PathValue(ctx, "id"),
 	})
 	if err != nil {
-		return fmt.Errorf("failed to find station by id: %w from id: %s", err, rollmelette_router.GetValue(ctx, "id"))
+		return fmt.Errorf("failed to find station by id: %w from id: %s", err, rollmelette_router.PathValue(ctx, "id"))
 	}
 	station, err := json.Marshal(res)
 	if err != nil {
