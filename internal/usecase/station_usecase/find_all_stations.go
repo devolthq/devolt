@@ -4,7 +4,7 @@ import (
 	"github.com/devolthq/devolt/internal/domain/entity"
 )
 
-type FindAllStationsOutputDTO []*FindStationByIdOutputDTO
+type FindAllStationsOutputDTO []*FindStationOutputDTO
 
 type FindAllStationsUseCase struct {
 	StationReposiory entity.StationRepository
@@ -16,14 +16,14 @@ func NewFindAllStationsUseCase(stationRepository entity.StationRepository) *Find
 	}
 }
 
-func (c *FindAllStationsUseCase) Execute() (*FindAllStationsOutputDTO, error) {
+func (c *FindAllStationsUseCase) Execute() ([]*FindStationOutputDTO, error) {
 	res, err := c.StationReposiory.FindAllStations()
 	if err != nil {
 		return nil, err
 	}
-	output := make(FindAllStationsOutputDTO, len(res))
+	output := make([]*FindStationOutputDTO, len(res))
 	for i, station := range res {
-		output[i] = &FindStationByIdOutputDTO{
+		output[i] = &FindStationOutputDTO{
 			Id:        station.Id,
 			Rate:      station.Rate,
 			Owner:     station.Owner,
@@ -34,5 +34,5 @@ func (c *FindAllStationsUseCase) Execute() (*FindAllStationsOutputDTO, error) {
 			UpdatedAt: station.UpdatedAt,
 		}
 	}
-	return &output, nil
+	return output, nil
 }

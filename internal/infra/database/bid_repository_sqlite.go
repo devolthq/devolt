@@ -42,6 +42,16 @@ func (s *BidRepositorySqlite) FindBidById(id int) (*entity.Bid, error) {
 	return &bid, nil
 }
 
+func (s *BidRepositorySqlite) FindBidsByAuctionId(id int) ([]*entity.Bid, error) {
+	var bids []*entity.Bid
+	err := s.Db.Select(&bids, "SELECT * FROM bids WHERE auction_id = $1", id)
+	if err != nil {
+		return nil, err
+	}
+	return bids, nil
+}
+
+
 func (s *BidRepositorySqlite) FindAllBids() ([]*entity.Bid, error) {
 	var bids []*entity.Bid
 	err := s.Db.Select(&bids, "SELECT * FROM bids")

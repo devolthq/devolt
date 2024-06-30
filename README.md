@@ -1,14 +1,13 @@
 # Roadmap
 - [ ] Tests;
-- [ ] Implement router for advance and inspect handlers;
 - [ ] Create a submodule for contracts github repo;
 - [ ] Migrate from sqlx to gorm or sqlc;
 - [ ] Change RBAC middleware to receive a array of roles instead of a single role;
 - [ ] Implement Wire for automatic dependency injection. [reference](https://github.com/google/wire);
 - [ ] Implement message acknowledgement on kafka topic to create station from handler and don't remove from queue until some logic happen. [reference for of use kafka/messaging-system](https://github.com/devfullcycle/goexpert/blob/main/20-CleanArch/cmd/ordersystem/main.go#L53);
-- [ ] Actualize all GetEnvs to LookupEnv;
 - [ ] README.md with business part and also all entrypoints;
 - [ ] Setup air for development and nonodo;
+- [x] Implement router for advance and inspect handlers;
 - [x] Create configuration files instead of settings in file to setup mongodb, sqlite, and others;
 - [x] Change rollup Dockerfile to build with the repository;
 - [x] Sign the simulation payload with ECDSA;

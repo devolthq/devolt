@@ -60,6 +60,21 @@ func (h *StationAdvanceHandlers) UpdateStationHandler(env rollmelette.Env, metad
 	return nil
 }
 
+func (h *StationAdvanceHandlers) DeleteStationHandler(env rollmelette.Env, metadata rollmelette.Metadata, deposit rollmelette.Deposit, payload []byte) error {
+	var input station_usecase.DeleteStationInputDTO
+	if err := json.Unmarshal(payload, &input); err != nil {
+		return fmt.Errorf("failed to unmarshal input: %w", err)
+	}
+	deleteStation := station_usecase.NewDeleteStationUseCase(h.StationRepository)
+	err := deleteStation.Execute(&input)
+	if err != nil {
+		return err
+	}
+	env.Notice([]byte(fmt.Sprintf("deleted station with id: %v", input.Id)))
+	return nil
+}
+
+//TODO: create a new usecae instead of call multiples handlers
 func (h *StationAdvanceHandlers) ReportHandler(env rollmelette.Env, metadata rollmelette.Metadata, deposit rollmelette.Deposit, payload []byte) error {
 	if err := h.UpdateStationHandler(env, metadata, deposit, payload); errors.Is(err, sql.ErrNoRows) {
 		if err := h.CreateStationHandler(env, metadata, deposit, payload); err != nil {

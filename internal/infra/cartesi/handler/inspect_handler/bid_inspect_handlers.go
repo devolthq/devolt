@@ -42,6 +42,26 @@ func (h *BidInspectHandlers) FindBidByIdInspectHandler(env rollmelette.EnvInspec
 	return nil
 }
 
+func (h *BidInspectHandlers) FindBisdByAuctionIdHandler(env rollmelette.EnvInspector, ctx context.Context) error {
+	id, err := strconv.Atoi(rollmelette_router.PathValue(ctx, "id"))
+	if err != nil {
+		return fmt.Errorf("failed to parse id into int: %v", rollmelette_router.PathValue(ctx, "id"))
+	}
+	findBidsByAuctionId := bid_usecase.NewFindBidsByAuctionIdUseCase(h.BidRepository)
+	res,err := findBidsByAuctionId.Execute(&bid_usecase.FindBidsByAuctionIdInputDTO{
+		AuctionId: id,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to find bids by auction id: %v", err)
+	}
+	bids, err := json.Marshal(res)
+	if err != nil {
+		return fmt.Errorf("failed to marshal bids: %w", err)
+	}
+	env.Report(bids)
+	return nil
+}
+
 func (h *BidInspectHandlers) FindAllBidsInspectHandler(env rollmelette.EnvInspector, ctx context.Context) error {
 	findAllBids := bid_usecase.NewFindAllBidsUseCase(h.BidRepository)
 	res, err := findAllBids.Execute()
