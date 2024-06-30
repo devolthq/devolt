@@ -1,8 +1,8 @@
 # Roadmap
-- [ ] Tests;
 - [ ] Finish the Auction logic;
 - [ ] Implement Wire for automatic dependency injection. [reference](https://github.com/google/wire);
-- [ ] Implement message acknowledgement on kafka topic to create station from handler and don't remove from queue until some logic happen. [reference for of use kafka/messaging-system](https://github.com/devfullcycle/goexpert/blob/main/20-CleanArch/cmd/ordersystem/main.go#L53);
+- [ ] Implement event dispatcher. [reference for of use kafka/messaging-system](https://github.com/devfullcycle/goexpert/blob/main/20-CleanArch/cmd/ordersystem/main.go#L53);
+- [ ] Tests;
 - [ ] Define custom errors on each file the requires;
 - [ ] Setup air for nonodo;
 - [x] Implement router for advance and inspect handlers;
