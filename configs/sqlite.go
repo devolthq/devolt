@@ -49,8 +49,14 @@ func SetupSqlite() (*sqlx.DB, error) {
 		);`,
 		`CREATE TABLE users (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			address TEXT NOT NULL ,
+			address TEXT NOT NULL,
 			role TEXT NOT NULL
+		);`,
+		`CREATE TABLE tokens (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			address TEXT NOT NUlL
+			created_at INTEGER NOT NULL,
+			updated_at INTEGER DEFAULT 0
 		);`,
 	}
 

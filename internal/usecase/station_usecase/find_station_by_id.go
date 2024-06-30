@@ -2,22 +2,10 @@ package station_usecase
 
 import (
 	"github.com/devolthq/devolt/internal/domain/entity"
-	"github.com/ethereum/go-ethereum/common"
 )
 
 type FindStationByIdInputDTO struct {
 	Id string `json:"id"`
-}
-
-type FindStationByIdOutputDTO struct {
-	Id        string            `json:"id"`
-	Rate      float64        `json:"rate"`
-	Owner     common.Address `json:"owner"`
-	State     string         `json:"state"`
-	Latitude  float64        `json:"latitude"`
-	Longitude float64        `json:"longitude"`
-	CreatedAt int64          `json:"created_at"`
-	UpdatedAt int64          `json:"updated_at"`
 }
 
 type FindStationByIdUseCase struct {
@@ -30,12 +18,12 @@ func NewFindStationByIdUseCase(stationRepository entity.StationRepository) *Find
 	}
 }
 
-func (u *FindStationByIdUseCase) Execute(input *FindStationByIdInputDTO) (*FindStationByIdOutputDTO, error) {
+func (u *FindStationByIdUseCase) Execute(input *FindStationByIdInputDTO) (*FindStationOutputDTO, error) {
 	res, err := u.StationRepository.FindStationById(input.Id)
 	if err != nil {
 		return nil, err
 	}
-	return &FindStationByIdOutputDTO{
+	return &FindStationOutputDTO{
 		Id:        res.Id,
 		Rate:      res.Rate,
 		Owner:     res.Owner,

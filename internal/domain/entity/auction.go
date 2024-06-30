@@ -6,6 +6,7 @@ import (
 
 type AuctionRepository interface {
 	CreateAuction(auction *Auction) (*Auction, error)
+	FindActiveAuction() (*Auction, error)
 	FindAuctionById(id int) (*Auction, error)
 	FindAllAuctions() ([]*Auction, error)
 	UpdateAuction(auction *Auction) (*Auction, error)

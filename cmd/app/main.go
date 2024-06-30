@@ -6,7 +6,7 @@ import (
 	_ "github.com/devolthq/devolt/api"
 	"github.com/devolthq/devolt/configs"
 	"github.com/devolthq/devolt/internal/infra/kafka"
-	"github.com/devolthq/devolt/internal/infra/web/handler"
+	"github.com/devolthq/devolt/internal/infra/http/handler"
 	"log"
 	"github.com/devolthq/devolt/internal/infra/database"
 	"github.com/gin-contrib/cors"

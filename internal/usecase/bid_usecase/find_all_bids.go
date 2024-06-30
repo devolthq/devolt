@@ -4,7 +4,7 @@ import (
 	"github.com/devolthq/devolt/internal/domain/entity"
 )
 
-type FindAllBidsOutputDTO []*FindBidByIdOutputDTO
+type FindAllBidsOutputDTO []*FindBidOutputDTO
 
 type FindAllBidsUseCase struct {
 	BidRepository entity.BidRepository
@@ -23,7 +23,7 @@ func (c *FindAllBidsUseCase) Execute() (*FindAllBidsOutputDTO, error) {
 	}
 	output := make(FindAllBidsOutputDTO, len(res))
 	for i, bid := range res {
-		output[i] = &FindBidByIdOutputDTO{
+		output[i] = &FindBidOutputDTO{
 			Id:        bid.Id,
 			AuctionId: bid.AuctionId,
 			Bidder:    bid.Bidder,

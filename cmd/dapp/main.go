@@ -6,9 +6,9 @@ import (
 	"log/slog"
 	"github.com/devolthq/devolt/configs"
 	"github.com/devolthq/devolt/internal/infra/database"
-	"github.com/devolthq/devolt/internal/infra/rollup/handler/advance_handler"
-	"github.com/devolthq/devolt/internal/infra/rollup/handler/inspect_handler"
-	"github.com/devolthq/devolt/internal/infra/rollup/middleware"
+	"github.com/devolthq/devolt/internal/infra/cartesi/handler/advance_handler"
+	"github.com/devolthq/devolt/internal/infra/cartesi/handler/inspect_handler"
+	"github.com/devolthq/devolt/internal/infra/cartesi/middleware"
 	"github.com/devolthq/devolt/internal/usecase/user_usecase"
 	"github.com/devolthq/devolt/pkg/rollmelette_router"
 	"github.com/ethereum/go-ethereum/common"
@@ -26,6 +26,7 @@ func main() {
 		log.Fatalf("Failed to open and connect to database: %v", err)
 	}
 
+	// TODO: replace this to wire dependency injection
 	//////////////////////// Repositories //////////////////////////
 	stationRepository := database.NewStationRepositorySqlite(db)
 	userRepository := database.NewUserRepositorySqlite(db)
@@ -52,11 +53,10 @@ func main() {
 	stationInpectHandlers := inspect_handler.NewStationInspectHandlers(stationRepository)
 	auctionHandlers := inspect_handler.NewAuctionInspectHandlers(auctionRepository)
 	bidHandlers := inspect_handler.NewBidInspectHandlers(bidRepository)
-
+	
 	//////////////////////// Setup Router //////////////////////////
 	dapp := rollmelette_router.NewRouter()
 	dapp.HandleAdvance("report", ECDSA.Middleware(stationAdvanceHandlers.ReportHandler))
-	dapp.HandleAdvance("station", RBAC.Middleware(stationAdvanceHandlers.CreateStationHandler, "admin"))
 	dapp.HandleAdvance("token", RBAC.Middleware(governanceAdvanceHandlers.SetTokenAddressHandler, "admin"))
 	dapp.HandleInspect("station", stationInpectHandlers.FindAllStationsInspectHandler)
 	dapp.HandleInspect("station/{id}", stationInpectHandlers.FindStationByIdInspectHandler)

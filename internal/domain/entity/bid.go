@@ -1,4 +1,4 @@
-package entity
+ package entity
 
 import (
 	"github.com/ethereum/go-ethereum/common"
@@ -8,6 +8,7 @@ import (
 type BidRepository interface {
 	CreateBid(bid *Bid) (*Bid, error)
 	FindBidById(id int) (*Bid, error)
+	FindBidsByAuctionId(id int) ([]*Bid, error)
 	FindAllBids() ([]*Bid, error)
 	UpdateBid(bid *Bid) (*Bid, error)
 	DeleteBid(id int) error
@@ -24,8 +25,9 @@ type Bid struct {
 	UpdatedAt int64          `json:"updated_at" db:"updated_at"`
 }
 
-func NewBid(bidder common.Address, credits uint256.Int, price uint256.Int, state string, createdAt int64) *Bid {
+func NewBid(auctionId int, bidder common.Address, credits uint256.Int, price uint256.Int, state string, createdAt int64) *Bid {
 	return &Bid{
+		AuctionId: auctionId,
 		Bidder:    bidder,
 		Credits:   credits,
 		Price:     price,
