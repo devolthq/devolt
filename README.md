@@ -1,10 +1,12 @@
 # Roadmap
+
 - [ ] Finish the Auction logic;
 - [ ] Implement Wire for automatic dependency injection. [reference](https://github.com/google/wire);
 - [ ] Implement event dispatcher. [reference for of use kafka/messaging-system](https://github.com/devfullcycle/goexpert/blob/main/20-CleanArch/cmd/ordersystem/main.go#L53);
 - [ ] Tests;
 - [ ] Define custom errors on each file the requires;
 - [ ] Setup air for nonodo;
+- [x] Bid Logic;
 - [x] Implement router for advance and inspect handlers;
 - [x] Create configuration files instead of settings in file to setup mongodb, sqlite, and others;
 - [x] Change rollup Dockerfile to build with the repository;
@@ -18,7 +20,6 @@
 ## Future plans
 
 - [ ] First hardware impl with raspberry pi pico 2W or raspberry pi pico W or other microcontroller;
-- [ ] Integration with w3bstream/sprout IOTEX;
 - [ ] P&D with ERC4337;
 
 ## Mainnet Step

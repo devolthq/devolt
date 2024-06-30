@@ -20,7 +20,7 @@ import (
 
 const rollupsContractsUrl = "https://registry.npmjs.org/@cartesi/rollups/-/rollups-1.2.0.tgz"
 const baseContractsPath = "package/export/artifacts/contracts/"
-const bindingPkg = "cartesi"
+const bindingPkg = "json_rpc"
 
 type contractBinding struct {
 	jsonPath string
@@ -32,7 +32,7 @@ var bindings = []contractBinding{
 	{
 		jsonPath: baseContractsPath + "inputs/InputBox.sol/InputBox.json",
 		typeName: "InputBox",
-		outFile:  "./pkg/rollups-contracts/input_box.go",
+		outFile:  "./internal/infra/json_rpc/input_box.go",
 	},
 }
 

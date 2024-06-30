@@ -7,13 +7,14 @@ import (
 	"os"
 	"sync"
 	"time"
+
 	ckafka "github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/devolthq/devolt/configs"
 	"github.com/devolthq/devolt/internal/domain/entity"
 	"github.com/devolthq/devolt/internal/infra/database"
 	"github.com/devolthq/devolt/internal/infra/kafka"
 	"github.com/devolthq/devolt/internal/usecase/device_usecase"
-	"github.com/devolthq/devolt/pkg/rollmelette_router"
+	"github.com/devolthq/devolt/pkg/router"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 )
 
@@ -98,7 +99,7 @@ func main() {
 					}
 
 					// TODO: use capnp instead
-					deviceInputData := rollmelette_router.AdvanceRequest{
+					deviceInputData := router.AdvanceRequest{
 						Path:    "report",
 						Payload: jsonBytesReport,
 					}
@@ -169,7 +170,7 @@ func main() {
 				}
 
 				// TODO: use capnp instead
-				deviceInputData := rollmelette_router.AdvanceRequest{
+				deviceInputData := router.AdvanceRequest{
 					Path:    "report",
 					Payload: jsonBytesReport,
 				}

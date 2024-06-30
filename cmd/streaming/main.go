@@ -3,7 +3,7 @@ package main
 import (
 	ckafka "github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/devolthq/devolt/internal/infra/kafka"
-	"github.com/devolthq/devolt/pkg/rollups_contracts"
+	"github.com/devolthq/devolt/internal/infra/json_rpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/devolthq/devolt/configs"
 	"log"
@@ -29,7 +29,7 @@ func main() {
 		log.Fatalf("Failed to create transactor: %v", err)
 	}
 
-	instance, err := rollups_contracts.NewInputBox(common.HexToAddress(os.Getenv("INPUT_BOX_CONTRACT_ADDRESS")), client)
+	instance, err := json_rpc.NewInputBox(common.HexToAddress(os.Getenv("INPUT_BOX_CONTRACT_ADDRESS")), client)
 	if err != nil {
 		log.Fatalf("Failed to create instance: %v", err)
 	}

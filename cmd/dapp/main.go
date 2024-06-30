@@ -4,13 +4,14 @@ import (
 	"context"
 	"log"
 	"log/slog"
+
 	"github.com/devolthq/devolt/configs"
-	"github.com/devolthq/devolt/internal/infra/database"
 	"github.com/devolthq/devolt/internal/infra/cartesi/handler/advance_handler"
 	"github.com/devolthq/devolt/internal/infra/cartesi/handler/inspect_handler"
 	"github.com/devolthq/devolt/internal/infra/cartesi/middleware"
+	"github.com/devolthq/devolt/internal/infra/database"
 	"github.com/devolthq/devolt/internal/usecase/user_usecase"
-	"github.com/devolthq/devolt/pkg/rollmelette_router"
+	"github.com/devolthq/devolt/pkg/router"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rollmelette/rollmelette"
 )
@@ -53,9 +54,9 @@ func main() {
 	stationInpectHandlers := inspect_handler.NewStationInspectHandlers(stationRepository)
 	auctionHandlers := inspect_handler.NewAuctionInspectHandlers(auctionRepository)
 	bidHandlers := inspect_handler.NewBidInspectHandlers(bidRepository)
-	
+
 	//////////////////////// Setup Router //////////////////////////
-	dapp := rollmelette_router.NewRouter()
+	dapp := router.NewRouter()
 	dapp.HandleAdvance("report", ECDSA.Middleware(stationAdvanceHandlers.ReportHandler))
 	dapp.HandleAdvance("token", RBAC.Middleware(governanceAdvanceHandlers.SetTokenAddressHandler, "admin"))
 	dapp.HandleInspect("station", stationInpectHandlers.FindAllStationsInspectHandler)
