@@ -8,7 +8,7 @@ import (
 
 	"github.com/devolthq/devolt/internal/domain/entity"
 	"github.com/devolthq/devolt/internal/usecase/bid_usecase"
-	"github.com/devolthq/devolt/pkg/rollmelette_router"
+	"github.com/devolthq/devolt/pkg/router"
 	"github.com/rollmelette/rollmelette"
 )
 
@@ -23,9 +23,9 @@ func NewBidInspectHandlers(bidRepository entity.BidRepository) *BidInspectHandle
 }
 
 func (h *BidInspectHandlers) FindBidByIdInspectHandler(env rollmelette.EnvInspector, ctx context.Context) error {
-	id, err := strconv.Atoi(rollmelette_router.PathValue(ctx, "id"))
+	id, err := strconv.Atoi(router.PathValue(ctx, "id"))
 	if err != nil {
-		return fmt.Errorf("failed to parse id into int: %v", rollmelette_router.PathValue(ctx, "id"))
+		return fmt.Errorf("failed to parse id into int: %v", router.PathValue(ctx, "id"))
 	}
 	findBidById := bid_usecase.NewFindBidByIdUseCase(h.BidRepository)
 	res, err := findBidById.Execute(&bid_usecase.FindBidByIdInputDTO{
@@ -43,12 +43,12 @@ func (h *BidInspectHandlers) FindBidByIdInspectHandler(env rollmelette.EnvInspec
 }
 
 func (h *BidInspectHandlers) FindBisdByAuctionIdHandler(env rollmelette.EnvInspector, ctx context.Context) error {
-	id, err := strconv.Atoi(rollmelette_router.PathValue(ctx, "id"))
+	id, err := strconv.Atoi(router.PathValue(ctx, "id"))
 	if err != nil {
-		return fmt.Errorf("failed to parse id into int: %v", rollmelette_router.PathValue(ctx, "id"))
+		return fmt.Errorf("failed to parse id into int: %v", router.PathValue(ctx, "id"))
 	}
 	findBidsByAuctionId := bid_usecase.NewFindBidsByAuctionIdUseCase(h.BidRepository)
-	res,err := findBidsByAuctionId.Execute(&bid_usecase.FindBidsByAuctionIdInputDTO{
+	res, err := findBidsByAuctionId.Execute(&bid_usecase.FindBidsByAuctionIdInputDTO{
 		AuctionId: id,
 	})
 	if err != nil {

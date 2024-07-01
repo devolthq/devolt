@@ -8,7 +8,7 @@ import (
 
 	"github.com/devolthq/devolt/internal/domain/entity"
 	"github.com/devolthq/devolt/internal/usecase/auction_usecase"
-	"github.com/devolthq/devolt/pkg/rollmelette_router"
+	"github.com/devolthq/devolt/pkg/router"
 	"github.com/rollmelette/rollmelette"
 )
 
@@ -23,9 +23,9 @@ func NewAuctionInspectHandlers(auctionRepository entity.AuctionRepository) *Auct
 }
 
 func (h *AuctionInspectHandlers) FindAuctionByIdInspectHandler(env rollmelette.EnvInspector, ctx context.Context) error {
-	id, err := strconv.Atoi(rollmelette_router.PathValue(ctx, "id"))
+	id, err := strconv.Atoi(router.PathValue(ctx, "id"))
 	if err != nil {
-		return fmt.Errorf("failed to parse id into int: %v", rollmelette_router.PathValue(ctx, "id"))
+		return fmt.Errorf("failed to parse id into int: %v", router.PathValue(ctx, "id"))
 	}
 	findAuctionById := auction_usecase.NewFindAuctionByIdUseCase(h.AuctionRepository)
 	res, err := findAuctionById.Execute(&auction_usecase.FindAuctionByIdInputDTO{

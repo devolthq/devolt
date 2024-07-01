@@ -1,4 +1,4 @@
-package rollmelette_router
+package router
 
 import (
     "context"

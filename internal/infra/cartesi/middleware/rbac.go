@@ -7,7 +7,7 @@ import (
 
 	"github.com/devolthq/devolt/internal/domain/entity"
 	"github.com/devolthq/devolt/internal/usecase/user_usecase"
-	"github.com/devolthq/devolt/pkg/rollmelette_router"
+	"github.com/devolthq/devolt/pkg/router"
 	"github.com/rollmelette/rollmelette"
 )
 
@@ -21,7 +21,7 @@ func NewRBACMiddleware(userRepository entity.UserRepository) *RBACMiddleware {
 	}
 }
 
-func (m *RBACMiddleware) Middleware(handlerFunc rollmelette_router.AdvanceHandlerFunc, role string) rollmelette_router.AdvanceHandlerFunc {
+func (m *RBACMiddleware) Middleware(handlerFunc router.AdvanceHandlerFunc, role string) router.AdvanceHandlerFunc {
 	return func(env rollmelette.Env, metadata rollmelette.Metadata, deposit rollmelette.Deposit, payload []byte) error {
 		findUserByAddress := user_usecase.NewFindUserByAddressUseCase(m.UserRepository)
 		user, err := findUserByAddress.Execute(&user_usecase.FindUserByAddressInputDTO{
@@ -33,7 +33,7 @@ func (m *RBACMiddleware) Middleware(handlerFunc rollmelette_router.AdvanceHandle
 			}
 			return err
 		}
-		if user.Role == role { 
+		if user.Role == role {
 			return fmt.Errorf("user don't have necessary permission: %v", role)
 		}
 		return handlerFunc(env, metadata, deposit, payload)

@@ -8,7 +8,7 @@ import (
 
 	"github.com/devolthq/devolt/internal/domain/entity"
 	"github.com/devolthq/devolt/internal/usecase/user_usecase"
-	"github.com/devolthq/devolt/pkg/rollmelette_router"
+	"github.com/devolthq/devolt/pkg/router"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/rollmelette/rollmelette"
 )
@@ -41,7 +41,7 @@ func NewUserInspectHandlers(userRepository entity.UserRepository) *UserInspectHa
 func (h *UserInspectHandlers) FindUserByAddressInspectHandler(env rollmelette.EnvInspector, ctx context.Context) error {
 	findUserByAddress := user_usecase.NewFindUserByAddressUseCase(h.UserRepository)
 	res, err := findUserByAddress.Execute(&user_usecase.FindUserByAddressInputDTO{
-		Address: common.BytesToAddress([]byte(rollmelette_router.PathValue(ctx, "address"))),
+		Address: common.BytesToAddress([]byte(router.PathValue(ctx, "address"))),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to find User: %w", err)
