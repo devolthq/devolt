@@ -1,4 +1,4 @@
-package tools
+package database
 
 func NilIfZero[T comparable](v T) interface{} {
 	var zero T

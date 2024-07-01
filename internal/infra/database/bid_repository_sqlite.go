@@ -2,7 +2,6 @@ package database
 
 import (
 	"github.com/devolthq/devolt/internal/domain/entity"
-	"github.com/devolthq/devolt/tools"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -77,12 +76,12 @@ func (s *BidRepositorySqlite) UpdateBid(input *entity.Bid) (*entity.Bid, error) 
 
 	var bid entity.Bid
 	err = stmt.QueryRowx(
-		tools.NilIfZero(input.AuctionId),
-		tools.NilIfZero(input.Bidder),
-		tools.NilIfZero(input.Credits),
-		tools.NilIfZero(input.Price),
-		tools.NilIfZero(input.State),
-		tools.NilIfZero(input.Id),
+		NilIfZero(input.AuctionId),
+		NilIfZero(input.Bidder),
+		NilIfZero(input.Credits),
+		NilIfZero(input.Price),
+		NilIfZero(input.State),
+		NilIfZero(input.Id),
 	).StructScan(&bid)
 	if err != nil {
 		return nil, err

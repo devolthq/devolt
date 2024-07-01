@@ -52,15 +52,6 @@ build:
 	@cartesi build --from-image dapp:latest
 	$(END_LOG)
 
-.PHONY: iot
-iot:
-	$(START_LOG)
-	@docker compose \
-		-f ./deployments/compose.packages.yaml \
-		--env-file ./.env.develop \
-		up app simulation streaming --build
-	$(END_LOG)
-
 .PHONY: app
 app:
 	$(START_LOG)
@@ -73,7 +64,6 @@ app:
 .PHONY: generate
 generate:
 	$(START_LOG)
-	@go run ./pkg/ecdsa/generate
 	@go run ./pkg/rollups_contracts/generate
 	$(END_LOG)
 

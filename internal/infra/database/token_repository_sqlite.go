@@ -3,7 +3,6 @@ package database
 import (
 	"fmt"
 	"github.com/devolthq/devolt/internal/domain/entity"
-	"github.com/devolthq/devolt/tools"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -63,9 +62,9 @@ func (s *TokenRepositorySqlite) UpdateToken(token *entity.Token) (*entity.Token,
 
 	var updatedToken entity.Token
 	err = stmt.QueryRowx(
-		tools.NilIfZero(token.Address.String()),
-		tools.NilIfZero(token.UpdatedAt),
-		tools.NilIfZero(token.Id),
+		NilIfZero(token.Address.String()),
+		NilIfZero(token.UpdatedAt),
+		NilIfZero(token.Id),
 	).StructScan(&updatedToken)
 	if err != nil {
 		return nil, err

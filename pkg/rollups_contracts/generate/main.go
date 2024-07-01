@@ -18,7 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 )
 
-const rollupsContractsUrl = "https://registry.npmjs.org/@cartesi/rollups/-/rollups-1.2.0.tgz"
+const rollupsContractsUrl = "https://registry.npmjs.org/@cartesi/rollups/-/rollups-1.4.0.tgz"
 const baseContractsPath = "package/export/artifacts/contracts/"
 const bindingPkg = "json_rpc"
 
@@ -33,6 +33,16 @@ var bindings = []contractBinding{
 		jsonPath: baseContractsPath + "inputs/InputBox.sol/InputBox.json",
 		typeName: "InputBox",
 		outFile:  "./internal/infra/json_rpc/input_box.go",
+	},
+	{
+		jsonPath: baseContractsPath + "portals/ERC20Portal.sol/ERC20Portal.json",
+		typeName: "ERC20Portal",
+		outFile:  "./internal/infra/json_rpc/erc20_portal.go",
+	},
+	{
+		jsonPath: baseContractsPath + "dapp/CartesiDApp.sol/CartesiDApp.json",
+		typeName: "CartesiDApp",
+		outFile:  "./internal/infra/json_rpc/cartesi_dapp.go",
 	},
 }
 

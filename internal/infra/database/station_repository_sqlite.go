@@ -2,7 +2,6 @@ package database
 
 import (
 	"github.com/devolthq/devolt/internal/domain/entity"
-	"github.com/devolthq/devolt/tools"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -72,13 +71,13 @@ func (s *StationRepositorySqlite) UpdateStation(input *entity.Station) (*entity.
 
 	var station entity.Station
 	err = stmt.QueryRowx(
-		tools.NilIfZero(input.Rate),
-		tools.NilIfZero(input.Owner),
-		tools.NilIfZero(input.State),
-		tools.NilIfZero(input.Latitude),
-		tools.NilIfZero(input.Longitude),
-		tools.NilIfZero(input.UpdatedAt),
-		tools.NilIfZero(input.Id),
+		NilIfZero(input.Rate),
+		NilIfZero(input.Owner),
+		NilIfZero(input.State),
+		NilIfZero(input.Latitude),
+		NilIfZero(input.Longitude),
+		NilIfZero(input.UpdatedAt),
+		NilIfZero(input.Id),
 	).StructScan(&station)
 	if err != nil {
 		return nil, err

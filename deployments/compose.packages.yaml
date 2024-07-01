@@ -22,23 +22,3 @@ services:
       dockerfile: build/Dockerfile.app
     ports:
       - 8083:8083
-  simulation:
-    hostname: simulation
-    container_name: simulation
-    platform: linux/amd64
-    env_file:
-      - ../.env.develop
-    restart: on-failure
-    build:
-      context: ..
-      dockerfile: build/Dockerfile.simulation
-  streaming:
-    hostname: streaming
-    container_name: streaming
-    platform: linux/amd64
-    env_file:
-      - ../.env.develop
-    restart: on-failure
-    build:
-      context: ..
-      dockerfile: build/Dockerfile.streaming
