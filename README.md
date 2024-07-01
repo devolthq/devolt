@@ -6,6 +6,7 @@
 - [ ] Tests;
 - [ ] Define custom errors on each file the requires;
 - [ ] Setup air for nonodo;
+- [ ] CI;
 - [x] Bid Logic;
 - [x] Implement router for advance and inspect handlers;
 - [x] Create configuration files instead of settings in file to setup mongodb, sqlite, and others;
@@ -21,7 +22,9 @@
 
 - [ ] First hardware impl with raspberry pi pico 2W or raspberry pi pico W or other microcontroller;
 - [ ] P&D with ERC4337;
+- [ ] Change the IoT flow to mobile experience;
 
 ## Mainnet Step
+
 - [ ] Cloud support with pulumi, aws, hivemq-cloud and confluent cloud;
 - [ ] Use Confluent Cloud and HiveMQ Cloud;
