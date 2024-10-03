@@ -42,14 +42,14 @@ async fn check_for_confirmations(devolt_bytes: Vec<u8>) {
     for (pubkey, account) in accounts {
         if account.state == EscrowState::Pending {
             match account.transaction {
-                payment_engine::Type::Buy => {
+                payment_engine::TransactionType::Buy => {
                     println!("Confirmation needed for buying escrow: {:?}", pubkey);
                     // let signature = PaymentEngineService::confirm_buying(pubkey, account)
                     //     .await
                     //     .expect("Failed to confirm buying");
                     // println!("Confirmed buying: {:?}", signature);
                 }
-                payment_engine::Type::Sell => {
+                payment_engine::TransactionType::Sell => {
                     println!("Confirmation needed for selling escrow: {:?}", pubkey);
                     // let signature = PaymentEngineService::confirm_selling(pubkey, account)
                     //     .await

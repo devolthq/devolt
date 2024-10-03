@@ -4,7 +4,7 @@ use anchor_spl::{
     token_interface::{Mint, TokenAccount, TokenInterface},
 };
 
-use crate::{calculate_volt_tokens, DeVoltEscrow, EscrowState, Type};
+use crate::{calculate_volt_tokens, DeVoltEscrow, EscrowState, TransactionType};
 
 #[derive(Accounts)]
 #[instruction(seed: u64, usdc_amount: u64)]
@@ -14,7 +14,6 @@ pub struct SellEnergy<'info> {
     #[account(mut)]
     pub producer: Signer<'info>,
 
-    // Mint accounts
     #[account(
         mint::authority = devolt,
         mint::decimals = 6,
@@ -28,7 +27,6 @@ pub struct SellEnergy<'info> {
     )]
     pub volt_mint: InterfaceAccount<'info, Mint>,
 
-    // Associated token accounts
     #[account(
         associated_token::mint = usdc_mint,
         associated_token::authority = producer,
@@ -48,7 +46,6 @@ pub struct SellEnergy<'info> {
     )]
     pub devolt_volt_account: InterfaceAccount<'info, TokenAccount>,
 
-    // Escrow account
     #[account(
         init,
         payer = devolt,
@@ -58,7 +55,6 @@ pub struct SellEnergy<'info> {
     )]
     pub devolt_escrow: Account<'info, DeVoltEscrow>,
 
-    // Programs
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
@@ -93,7 +89,7 @@ impl<'info> SellEnergy<'info> {
             volts: volts_amount,
             usdc: usdc_amount,
 
-            transaction: Type::Sell,
+            transaction: TransactionType::Sell,
             state: EscrowState::Pending,
         });
 

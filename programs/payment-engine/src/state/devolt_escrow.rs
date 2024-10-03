@@ -18,12 +18,12 @@ pub struct DeVoltEscrow {
     pub volts: u64,
     pub usdc: u64,
 
-    pub transaction: Type,
+    pub transaction: TransactionType,
     pub state: EscrowState,
 }
 
 impl DeVoltEscrow {
-    pub const INIT_SPACE: usize = 8 + // Discriminador
+    pub const INIT_SPACE: usize = 8 + // Discriminator
         8 + // seed
         1 + // bump
         32 + // producer
@@ -47,7 +47,7 @@ pub enum EscrowState {
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-pub enum Type {
+pub enum TransactionType {
     Buy,
     Sell,
 }

@@ -4,7 +4,7 @@ use anchor_spl::{
     token_interface::{transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked},
 };
 
-use crate::{calculate_usdc_amount, DeVoltEscrow, EscrowState, Type};
+use crate::{calculate_usdc_amount, DeVoltEscrow, EscrowState, TransactionType};
 
 #[derive(Accounts)]
 #[instruction(seed: u64, energy_amount: u64)]
@@ -67,7 +67,7 @@ impl<'info> BuyEnergy<'info> {
             volt_mint: self.volt_mint.key(),
             volts: energy_amount,
             usdc: usdc_amount,
-            transaction: Type::Buy,
+            transaction: TransactionType::Buy,
             state: EscrowState::Pending,
         });
 

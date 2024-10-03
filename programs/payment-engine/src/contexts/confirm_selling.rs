@@ -12,21 +12,20 @@ pub struct ConfirmSelling<'info> {
     pub devolt: Signer<'info>,
 
     #[account(
-        mut, // Adicionado mut
+        mut,
         mint::authority = devolt,
         mint::decimals = 6,
         mint::token_program = token_program
     )]
     pub usdc_mint: Account<'info, Mint>,
     #[account(
-        mut, // Adicionado mut
+        mut,
         mint::authority = devolt,
         mint::decimals = 6,
         mint::token_program = token_program
     )]
     pub volt_mint: Account<'info, Mint>,
 
-    // Contas de token associadas
     #[account(mut)]
     pub producer_usdc_account: Account<'info, TokenAccount>,
     #[account(mut)]
@@ -34,7 +33,6 @@ pub struct ConfirmSelling<'info> {
     #[account(mut)]
     pub devolt_volt_account: Account<'info, TokenAccount>,
 
-    // Conta de escrow
     #[account(
         mut,
         seeds = [b"devolt".as_ref(), devolt_escrow.maker.key().as_ref(), &devolt_escrow.seed.to_le_bytes()],
@@ -42,7 +40,6 @@ pub struct ConfirmSelling<'info> {
     )]
     pub devolt_escrow: Account<'info, DeVoltEscrow>,
 
-    // Programas
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
@@ -69,7 +66,11 @@ impl<'info> ConfirmSelling<'info> {
         let cpi_program = self.token_program.to_account_info();
         let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
 
-        token::transfer_checked(cpi_ctx, self.devolt_escrow.usdc * 1_000_000, self.usdc_mint.decimals)?;
+        token::transfer_checked(
+            cpi_ctx,
+            self.devolt_escrow.usdc * 1_000_000,
+            self.usdc_mint.decimals,
+        )?;
 
         let cpi_accounts = MintTo {
             mint: self.volt_mint.to_account_info(),
