@@ -1,0 +1,28 @@
+[package]
+name = "api"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+sqlx = { version = "0.7.2", default-features = false, features = [
+    "sqlite",
+    "runtime-tokio-native-tls",
+    "macros",
+] }
+axum = { version = "0.7", features = ["json", "macros"] }
+tokio = { version = "1.40.0", features = ["full"] }
+serde = { version = "1.0.210", features = ["derive"] }
+serde_json = "1.0"
+uuid = { version = "1", features = ["v4", "serde"] }
+dotenv = "0.15"
+anchor-client = { version = "0.30.1", features = ["async"] }
+payment-engine = { path = "../../programs/payment-engine" }
+reqwest = { version = "0.11", features = ["json", "blocking", "rustls-tls"] }
+anyhow = "1.0"
+jsonwebtoken = "9.3.0"
+sha2 = "0.10"
+hmac = "0.12"
+rand = "0.8"
+hex = "0.4"
+chrono = "0.4.38"
+anchor-spl = { version = "0.30.1" }
