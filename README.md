@@ -29,8 +29,8 @@ To set up the project locally, follow these steps:
 1. **Clone the Repository**
 
     ```bash
-    git clone https://github.com/solana-turbin3/Q3T_Sol_Marcelo_Feitoza
-    cd capstone-devolt/
+    git clone https://github.com/devolthq/devolt-radar
+    cd devolt-radar
     ```
 
 2. **Install Dependencies**
