@@ -1,19 +1,18 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Link } from 'expo-router';
 
 export default function Page1() {
   const router = useRouter();
 
   return (
     <View style={styles.container}>
-      <Text style={styles.semiBoldText}>Bem-vindo à DeVolt</Text>
-      <Text style={styles.headline}>A revolução da energia descentralizada</Text>
+      <Text style={styles.semiBoldText}>Welcome to DeVolt</Text>
+      <Text style={styles.headline}>A completely new way to use and trade energy.</Text>
       <Image source={require('./assets/image1.png')} style={styles.image} />
       
-
-      <TouchableOpacity style={styles.button} onPress={() => router.push('./Page2')}>
+      {/* Navegar para a página localizada em onboard/second/index.tsx */}
+      <TouchableOpacity style={styles.button} onPress={() => router.push('./onboard/second')}>
         <Text style={styles.buttonText}>Next</Text>
       </TouchableOpacity>
     </View>
@@ -26,19 +25,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: '#000',
   },
   semiBoldText: {
     fontSize: 24,
     fontWeight: '600', 
     marginBottom: 10,
-    color: '#161616',
+    color: '#fff',
   },
   headline: {
     fontSize: 20,
     fontWeight: '300', 
     marginBottom: 30,
-    color: '#161616',
+    color: '#fff',
   },
   image: {
     width: 200,

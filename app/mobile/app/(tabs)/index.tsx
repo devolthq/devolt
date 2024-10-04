@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import LoginScreen from "../pages/loginScreen/LoginScreen";
-import Page1 from "../pages/onboard/Page1";
+import Page1 from "../pages/onboard/index";
 
 export default function HomeScreen() {
   const [isLoading, setIsLoading] = useState(true);
