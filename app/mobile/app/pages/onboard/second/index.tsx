@@ -1,9 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, StatusBar } from 'react-native';
 
 export default function Page2() {
   return (
+    
     <View style={styles.container}>
+            <StatusBar barStyle={'light-content'} />
       <Text style={styles.title}>A próxima etapa da DeVolt</Text>
       <Text style={styles.subtitle}>Siga em frente para descobrir mais sobre energia sustentável</Text>
     </View>

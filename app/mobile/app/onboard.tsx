@@ -10,8 +10,8 @@ export default function Page1() {
       <StatusBar barStyle={'light-content'} />
       <Text style={styles.semiBoldText}>Welcome to DeVolt</Text>
       <Text style={styles.headline}>A completely new way to use and trade energy.</Text>
-      <Image source={require('./assets/image1.png')} style={styles.image} />
-      
+      {/* <Image source={require('./assets/image1.png')} style={styles.image} />
+       */}
 
       <TouchableOpacity style={styles.button} onPress={() => router.push('./../onboard/second')}>
         <Text style={styles.buttonText}>Next</Text>
