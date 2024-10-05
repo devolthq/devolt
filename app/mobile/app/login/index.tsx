@@ -15,11 +15,12 @@ import Animated, {
 } from "react-native-reanimated";
 import { router } from "expo-router";
 import { login } from "@/services/authService";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Login() {
 	const [email, setEmail] = useState("producer@email.com");
 	const [password, setPassword] = useState("password");
-	const [loading, setLoading] = useState(false);
+	const [isLoading, setIsLoading] = useState(false);
 
 	const fadeAnim = useSharedValue(0);
 	const slideAnim = useSharedValue(300);
@@ -37,17 +38,29 @@ export default function Login() {
 		transform: [{ translateY: slideAnim.value }],
 	}));
 
+	const { isLoggedIn, login } = useAuth();
+
 	const handleLogin = async () => {
-		setLoading(true);
+		setIsLoading(true);
 		try {
-			const response = await login(email, password);
-			router.replace("/");
+			await login(email, password);
 		} catch (error) {
 			Alert.alert("Error", error.message);
+			console.error("Login error:", error);
 		} finally {
-			setLoading(false);
+			setIsLoading(false);
 		}
 	};
+
+	useEffect(() => {
+		if (!isLoading) {
+			if (isLoggedIn) {
+				router.replace("/");
+			} else {
+				// router.replace("/onboard");
+			}
+		}
+	}, [isLoggedIn, isLoading]);
 
 	return (
 		<View style={styles.container}>
@@ -77,9 +90,9 @@ export default function Login() {
 				<Pressable
 					style={styles.loginButton}
 					onPress={handleLogin}
-					disabled={loading}
+					disabled={isLoading}
 				>
-					{loading ? (
+					{isLoading ? (
 						<ActivityIndicator size="small" color="#1e1e1e" />
 					) : (
 						<Text style={styles.buttonLabel}>Login</Text>

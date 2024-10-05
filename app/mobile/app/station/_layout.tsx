@@ -11,7 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 SplashScreen.preventAutoHideAsync();
 
-export default function LoginLayout() {
+export default function StationLayout() {
 	const colorScheme = useColorScheme();
 	const { isLoggedIn, isLoading } = useAuth();
 
@@ -19,30 +19,17 @@ export default function LoginLayout() {
 		console.log("isLoggedIn: ", isLoggedIn, "isLoading: ", isLoading);
 
 		if (!isLoading && isLoggedIn) {
-            router.replace("/");
+			router.replace("/");
 		}
 	}, [isLoggedIn, isLoading]);
 
 	return (
 		<Stack
 			screenOptions={{
-				headerStyle: {
-					backgroundColor: "#000",
-				},
-				headerLeft: () => (
-					<Pressable
-						style={styles.backButton}
-						onPress={() => {
-							router.push("/onboard");
-						}}
-					>
-						<Ionicons name="arrow-back" size={24} color="#fff" />
-					</Pressable>
-				),
-				headerTitle: "",
+				headerShown: false,
 			}}
 		>
-			<Stack.Screen name="index" options={{}} />
+			<Stack.Screen name="[id]" options={{ title: "Station" }} />
 		</Stack>
 	);
 }

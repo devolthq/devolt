@@ -40,6 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 	const [user, setUser] = useState<User | null>(null);
 	const [token, setToken] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
+	const [isLoggedIn, setIsLoggedIn] = useState(false);
 
 	useEffect(() => {
 		const loadUserFromStorage = async () => {
@@ -47,8 +48,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 			if (storedToken) {
 				setToken(storedToken);
 				const storedUser = await AsyncStorage.getItem("user");
-				console.log("Stored user:", storedUser);
 				if (storedUser) setUser(JSON.parse(storedUser));
+				setIsLoggedIn(true);
 			}
 			setIsLoading(false);
 		};
@@ -56,23 +57,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 	}, []);
 
 	const login = async (email: string, password: string) => {
-		const { user, token } = await loginService(email, password);
-		setUser(user);
-		setToken(token);
+		setIsLoading(true);
+		try {
+			const { user, token } = await loginService(email, password);
+			setUser(user);
+			setToken(token);
+			setIsLoggedIn(true);
 
-		await storeToken(token);
-		await AsyncStorage.setItem("user", JSON.stringify(user));
+			await storeToken(token);
+			await AsyncStorage.setItem("user", JSON.stringify(user));
+		} catch (error) {
+			console.error("Login error:", error);
+		} finally {
+			setIsLoading(false);
+		}
 	};
 
 	const logout = async () => {
 		await logoutService();
 		setUser(null);
 		setToken(null);
+		setIsLoggedIn(false);
 		await AsyncStorage.removeItem("user");
-		router.replace("/login");
+		router.replace("/onboard");
 	};
-
-	const isLoggedIn = !!token;
 
 	return (
 		<AuthContext.Provider

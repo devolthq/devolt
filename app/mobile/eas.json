@@ -6,6 +6,10 @@
       "ios": {
         "simulator": true
       }
+    },
+    "development-android": {
+      "developmentClient": true,
+      "distribution": "internal"
     }
   }
 }

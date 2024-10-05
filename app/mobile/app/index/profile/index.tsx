@@ -12,6 +12,7 @@ import {
 	Pressable,
 	TextInput,
 	StatusBar,
+	ScrollView,
 } from "react-native";
 import { PanGestureHandler } from "react-native-gesture-handler";
 import Animated, {
@@ -21,48 +22,33 @@ import Animated, {
 	useAnimatedStyle,
 } from "react-native-reanimated";
 import { sharedStyles } from "../_layout";
+import CreditCard from "@/components/CreditCard";
 
 export default function Profile() {
-	const { isLoggedIn, isLoading, logout } = useAuth();
-	const hasNavigatedRef = useRef(false);
-
-	// useEffect(() => {
-	// 	if (!isLoading && !hasNavigatedRef.current) {
-	// 		hasNavigatedRef.current = true;
-	// 		if (!isLoggedIn) {
-	// 			router.replace("/");
-	// 		}
-	// 	}
-	// }, [isLoading, isLoggedIn]);
-
-	// if (isLoading) {
-	// 	return (
-	// 		<View style={styles.container}>
-	// 			<ActivityIndicator size="large" color="#e1e1e1" />
-	// 		</View>
-	// 	);
-	// }
+	const { user } = useAuth();
 
 	return (
-		<View style={styles.container}>
+		<ScrollView style={styles.container}>
 			<StatusBar barStyle="light-content" />
-			<Pressable onPress={() => router.back()} style={styles.backButton}>
-				<Ionicons name="arrow-back" size={24} color="#fff" />
-			</Pressable>
+
 			<View>
-				<Text
-					style={{
-						color: "#fff",
-						fontSize: 18,
-						fontWeight: "300",
-						textAlign: "center",
-						marginBottom: 20,
-					}}
-				>
-					Map Placeholder
-				</Text>
+				<Text style={styles.title}>Profile</Text>
+
+				<View>
+					<Text style={styles.text}>Name: {user.name}</Text>
+					<Text style={styles.text}>Email: {user.email}</Text>
+				</View>
 			</View>
-		</View>
+
+			<View>
+				<Text style={styles.title}>Financial information</Text>
+				<CreditCard
+					cardName={user.name}
+					cardEnding={9999}
+					cardExpiry={"12/25"}
+				/>
+			</View>
+		</ScrollView>
 	);
 }
 
@@ -72,12 +58,18 @@ const styles = StyleSheet.create({
 		display: "flex",
 		flexDirection: "column",
 		backgroundColor: "#000",
-		alignContent: "center",
-		justifyContent: "center",
+        paddingHorizontal: 20,
+		paddingTop: 120,
 	},
-	backButton: {
-		position: "absolute",
-		top: 60,
-		left: 20,
+	title: {
+		color: "#fff",
+		fontSize: 24,
+		marginBottom: 20,
+		fontWeight: "400",
+	},
+	text: {
+		color: "#fff",
+		fontSize: 16,
+		marginBottom: 10,
 	},
 });

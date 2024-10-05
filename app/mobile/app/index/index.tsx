@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { router } from "expo-router";
+import { Link, router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
 	View,
@@ -24,45 +24,14 @@ import Animated, {
 } from "react-native-reanimated";
 import * as Location from "expo-location";
 import { sharedStyles } from "./_layout";
-import { DefaultTransition } from "@react-navigation/stack/lib/typescript/src/TransitionConfigs/TransitionPresets";
 import { Station, stations } from "@/constants/Stations";
 
 export default function Home() {
 	const { isLoggedIn, isLoading, logout, user } = useAuth();
 	const hasNavigatedRef = useRef(false);
 
-	// useEffect(() => {
-	// 	if (!isLoading && !hasNavigatedRef.current) {
-	// 		hasNavigatedRef.current = true;
-	// 		if (!isLoggedIn) {
-	// 			router.replace("/");
-	// 		}
-	// 	}
-	// }, [isLoading, isLoggedIn]);
-
-	// if (isLoading) {
-	// 	return (
-	// 		<View style={styles.container}>
-	// 			<ActivityIndicator size="large" color="#e1e1e1" />
-	// 		</View>
-	// 	);
-	// }
-
-	const renderStationCard = (s: Station) => (
-		<View style={styles.card}>
-			<Text style={styles.stationName}>{s.address}</Text>
-			<Text style={styles.stationDistance}>
-				{Math.round(s.batteryLevel)}% | {s.availablePlugs}
-			</Text>
-
-			<Text style={styles.stationDistance}>
-				{Math.round(s.meanPrice)} kWh | {s.maxVoltage} V
-			</Text>
-		</View>
-	);
-
-	const MIN_HEIGHT = 90;
-	const MAX_HEIGHT = 800;
+	const MIN_HEIGHT = 60;
+	const MAX_HEIGHT = 750;
 	const DEFAULT_HEIGHT = 300;
 
 	const translateY = useSharedValue(DEFAULT_HEIGHT);
@@ -95,8 +64,35 @@ export default function Home() {
 		},
 	});
 
+	const [isPressed, setIsPressed] = useState(false);
 	const [location, setLocation] = useState(null);
 	const [region, setRegion] = useState(null);
+	const mapRef = useRef(null);
+
+	const focusUserLocation = () => {
+		if (location) {
+			const newRegion = {
+				latitude: location.latitude,
+				longitude: location.longitude,
+				latitudeDelta: 0.01,
+				longitudeDelta: 0.01,
+			};
+
+			if (translateY.value === MAX_HEIGHT) {
+				translateY.value = withSpring(DEFAULT_HEIGHT, {
+					damping: 50,
+				});
+			}
+			if (translateY.value === DEFAULT_HEIGHT) {
+				translateY.value = withSpring(MIN_HEIGHT, {
+					damping: 50,
+				});
+			}
+
+			setRegion(newRegion);
+			mapRef.current.animateToRegion(newRegion, 1000);
+		}
+	};
 
 	useEffect(() => {
 		(async () => {
@@ -119,7 +115,22 @@ export default function Home() {
 		console.log("user", user);
 	}, []);
 
-	const isCollapsed = useDerivedValue(() => translateY.value <= MIN_HEIGHT);
+	const renderStationCard = ({ item }: { item: Station }) => {
+		return (
+			<Pressable style={styles.card} onPress={() => {
+				router.push(`/station`);
+			}}>
+				<Text style={styles.stationName}>{item.address}</Text>
+				<Text style={styles.stationDistance}>
+					{Math.round(item.batteryLevel)}% | {item.availablePlugs}
+				</Text>
+
+				<Text style={styles.stationDistance}>
+					{Math.round(item.meanPrice)} kWh | {item.maxVoltage} V
+				</Text>
+			</Pressable>
+		);
+	};
 
 	return (
 		<View style={styles.container}>
@@ -128,12 +139,15 @@ export default function Home() {
 			<View style={styles.mapContainer}>
 				{region ? (
 					<MapView
+						ref={mapRef}
 						style={styles.map}
 						initialRegion={region}
 						showsUserLocation={true}
 						followsUserLocation={true}
 						mapType="terrain"
 						loadingBackgroundColor="#e1e1e1"
+						loadingEnabled={true}
+						loadingIndicatorColor="#1e1e1e"
 					>
 						{stations.map((station) => (
 							<Marker
@@ -143,6 +157,7 @@ export default function Home() {
 									longitude: station.longitude,
 								}}
 								title={station.address}
+								pinColor="#42FF4E"
 							/>
 						))}
 					</MapView>
@@ -169,48 +184,41 @@ export default function Home() {
 						<View style={styles.hairline} />
 					</Pressable>
 
-					{!isCollapsed.value && (
-						<>
-							<View style={styles.welcomeContainer}>
-								<Text style={styles.welcomeTitle}>
-									Welcome {user?.name}!
-								</Text>
+					<View style={styles.welcomeContainer}>
+						<Text style={styles.welcomeTitle}>
+							Welcome {user?.name}!
+						</Text>
 
-								<Pressable
-									onPress={() =>
-										setRegion({
-											latitude: location.latitude,
-											longitude: location.longitude,
-											latitudeDelta: 0.01,
-											longitudeDelta: 0.01,
-										})
-									}
-								>
-									<Ionicons
-										name="navigate"
-										size={24}
-										color="#fff"
-									/>
-								</Pressable>
-							</View>
-
-							<Text style={styles.title}>
-								EV Station Near You
-							</Text>
-
-							<FlatList
-								data={stations}
-								keyExtractor={(item) => item.id.toString()}
-								renderItem={renderStationCard}
-								contentContainerStyle={styles.cardList}
+						<Pressable
+							onPress={focusUserLocation}
+							onPressIn={() => setIsPressed(true)}
+							onPressOut={() => setIsPressed(false)}
+							style={styles.button}
+						>
+							<Ionicons
+								name="navigate"
+								size={24}
+								color={isPressed ? "#4a4a4a" : "#fff"}
 							/>
-						</>
-					)}
+						</Pressable>
+					</View>
+
+					<Text style={styles.title}>EV Station Near You</Text>
+
+					<FlatList
+						data={stations}
+						horizontal
+						keyExtractor={(item) => item.id.toString()}
+						renderItem={renderStationCard}
+						contentContainerStyle={styles.cardList}
+					/>
 				</Animated.View>
 			</PanGestureHandler>
 		</View>
 	);
 }
+
+const { width } = Dimensions.get("window");
 
 const styles = StyleSheet.create({
 	container: {
@@ -282,9 +290,9 @@ const styles = StyleSheet.create({
 		gap: 20,
 	},
 	card: {
-		// width: width * 0.4,
-		height: 100,
+		width: width * 0.4,
 		backgroundColor: "#1e1e1e",
+		height: 200,
 		borderRadius: 10,
 		padding: 15,
 		marginRight: 10,
@@ -298,5 +306,14 @@ const styles = StyleSheet.create({
 	stationDistance: {
 		color: "#fff",
 		fontSize: 14,
+	},
+	button: {
+		width: 50,
+		height: 50,
+		borderRadius: 25,
+		...sharedStyles.centerContent,
+	},
+	buttonPressed: {
+		backgroundColor: "#333",
 	},
 });

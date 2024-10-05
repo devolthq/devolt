@@ -12,6 +12,8 @@ import { Ionicons } from "@expo/vector-icons";
 import Animated from "react-native-reanimated";
 import { useAuth } from "@/hooks/useAuth";
 import Home from "@/index";
+import { useEffect } from "react";
+import { router } from "expo-router";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -27,7 +29,7 @@ function CustomHeader({ navigation, searchBar = true }) {
 				<Ionicons name="menu" size={24} color="#fff" />
 			</Pressable>
 
-			{searchBar ?? (
+			{searchBar && (
 				<View style={styles.searchBar}>
 					<Ionicons
 						name="search"
@@ -55,7 +57,7 @@ function CustomDrawerContent(props) {
 			<DrawerItem
 				label="Logout"
 				icon={({ color, size }) => (
-					<Ionicons name="log-out" color={color} size={size} />
+					<Ionicons name="log-out" color={"#FFF"} size={size} />
 				)}
 				onPress={logout}
 				labelStyle={{ color: "#FFF" }}
@@ -64,7 +66,17 @@ function CustomDrawerContent(props) {
 	);
 }
 
-export default function RootLayout() {
+export default function IndexLayout() {
+	const { isLoggedIn, isLoading } = useAuth();
+
+	useEffect(() => {
+		console.log("isLoggedIn: ", isLoggedIn, "isLoading: ", isLoading);
+
+		if (!isLoading && !isLoggedIn) {
+			router.replace("/onboard");
+		}
+	}, [isLoggedIn, isLoading]);
+
 	return (
 		<GestureHandlerRootView style={{ flex: 1 }}>
 			<Drawer
@@ -72,6 +84,7 @@ export default function RootLayout() {
 					header: (props) => <CustomHeader {...props} />,
 					headerStyle: {
 						backgroundColor: "#000",
+						zIndex: 1,
 					},
 					drawerStyle: {
 						backgroundColor: "#000",
@@ -94,6 +107,7 @@ export default function RootLayout() {
 					name="profile/index"
 					options={{
 						title: "Profile",
+						headerTitle: "Profile",
 						header: (props) => (
 							<CustomHeader {...props} searchBar={false} />
 						),
