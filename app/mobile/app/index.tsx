@@ -1,19 +1,61 @@
-import { Link, Stack, useNavigation } from 'expo-router';
-import { Text, View } from 'react-native';
-import { useEffect } from 'react';
-import React from 'react';
+import { useAuth } from "@/hooks/useAuth";
+import { router } from "expo-router";
+import { useEffect, useRef } from "react";
+import {
+	View,
+	Text,
+	ActivityIndicator,
+	StyleSheet,
+	StatusBar,
+	Pressable,
+} from "react-native";
 
-export default function Home() {
-  const navigation = useNavigation();
+export default function Page() {
+	const { isLoggedIn, isLoading, logout } = useAuth();
+	const hasNavigatedRef = useRef(false);
 
-  useEffect(() => {
-    navigation.setOptions({ headerShown: false });
-  }, [navigation]);
+	if (isLoading) {
+		return (
+			<View style={styles.container}>
+				<ActivityIndicator size="large" color="#e1e1e1" />
+			</View>
+		);
+	}
 
-  return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <Text>Home Screen</Text>
-      <Link href="onboard" ><Text>lavar para onboard</Text></Link>
-    </View>
-  );
+	useEffect(() => {
+		console.log("isLoading:", isLoading, "isLoggedIn:", isLoggedIn);
+		if (!isLoading && !hasNavigatedRef.current) {
+			hasNavigatedRef.current = true;
+			if (!isLoggedIn) {
+				console.log("Navigating to /onboard");
+				router.replace("/onboard");
+			}
+		}
+	}, [isLoading]);
+
+	return (
+		<View style={styles.container}>
+			<Text style={styles.text}>Hello, world!</Text>
+
+			<Pressable
+				onPress={() => {
+					logout();
+				}}
+			>
+				<Text style={styles.text}>Logout</Text>
+			</Pressable>
+		</View>
+	);
 }
+
+const styles = StyleSheet.create({
+	container: {
+		flex: 1,
+		justifyContent: "center",
+		alignItems: "center",
+		backgroundColor: "#000",
+	},
+	text: {
+		color: "#fff",
+	},
+});

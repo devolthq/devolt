@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "devoltapp",
-    "slug": "devoltapp",
+    "name": "DeVolt",
+    "slug": "DeVolt",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -10,18 +10,22 @@
     "splash": {
       "image": "./assets/images/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#1E1E1E"
     },
     "ios": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#1E1E1E"
+      },
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.devoltapp"
+      "bundleIdentifier": "com.anonymous.devolt"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#1E1E1E"
       },
-      "package": "com.anonymous.devoltapp"
+      "package": "com.anonymous.devolt"
     },
     "web": {
       "bundler": "metro",
@@ -29,10 +33,21 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "@rnmapbox/maps",
+        {
+          "RNMapboxMapsDownloadToken": "sk.ey.."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "d299e120-5964-4c9b-87c4-a010b615f435"
+      }
     }
   }
 }

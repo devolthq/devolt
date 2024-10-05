@@ -5,7 +5,7 @@ pub use state::*;
 pub mod contexts;
 pub use contexts::*;
 
-declare_id!("dvtVrC31dR5qRsvne8XucZ24cfvdRPPYDN5cPExfMhE");
+declare_id!("AWy7WdHbobYLzPFiKnkbeasjzu54okMxDWUgaJhbCffr");
 
 #[program]
 pub mod payment_engine {

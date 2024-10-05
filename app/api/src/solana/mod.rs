@@ -1,4 +1,8 @@
-use anchor_client::solana_sdk::signature::{Keypair, Signature};
+use anchor_client::solana_sdk::{
+    clock::Clock,
+    signature::{Keypair, Signature},
+    sysvar::Sysvar,
+};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -78,7 +82,10 @@ impl PaymentEngineService {
             jsonrpc: "2.0".to_string(),
             method: "sell_energy".to_string(),
             params: json!({
-                "seed": params.seed,
+                "seed": std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs(),
                 "usdcAmount": params.usdc_amount,
                 "producerKeypairBytes": producer_keypair_bytes,
             }),
@@ -92,37 +99,48 @@ impl PaymentEngineService {
             .json(&payload)
             .send()
             .await
-            .map_err(|e| ErrorResponse {
-                status_code: 500,
-                error: format!("Error sending request: {}", e),
+            .map_err(|e| {
+                eprintln!("Error sending request: {}", e);
+                ErrorResponse {
+                    status_code: 500,
+                    error: "Failed to send request to payment engine".to_string(),
+                }
             })?;
 
         println!("Received response status: {}", response.status());
 
-        let response_json: ApiResponse = response.json().await.map_err(|e| ErrorResponse {
-            status_code: 500,
-            error: format!("Error parsing response: {}", e),
+        let response_json: ApiResponse = response.json().await.map_err(|e| {
+            eprintln!("Error parsing response: {}", e);
+            ErrorResponse {
+                status_code: 500,
+                error: "Failed to parse response from payment engine".to_string(),
+            }
         })?;
 
         if let Some(result) = response_json.result {
             let transaction_id = result.transactionId;
-            Signature::from_str(&transaction_id).map_err(|e| ErrorResponse {
-                status_code: 500,
-                error: format!("Error parsing signature: {}", e),
+            Signature::from_str(&transaction_id).map_err(|e| {
+                eprintln!("Error parsing signature: {}", e);
+                ErrorResponse {
+                    status_code: 500,
+                    error: "Failed to parse transaction signature".to_string(),
+                }
             })
         } else if let Some(error) = response_json.error {
             let error_message = error
                 .get("message")
                 .and_then(|v| v.as_str())
                 .unwrap_or("Unknown error");
+            eprintln!("Error from payment engine: {}", error_message);
             Err(ErrorResponse {
                 status_code: 500,
-                error: error_message.to_string(),
+                error: "Payment engine returned an error".to_string(),
             })
         } else {
+            eprintln!("Invalid response from server");
             Err(ErrorResponse {
                 status_code: 500,
-                error: "Invalid response from server".to_string(),
+                error: "Invalid response from payment engine".to_string(),
             })
         }
     }
@@ -137,7 +155,10 @@ impl PaymentEngineService {
             jsonrpc: "2.0".to_string(),
             method: "buy_energy".to_string(),
             params: json!({
-                "seed": params.seed,
+                "seed": std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs(),
                 "energyAmount": params.energy_amount,
                 "consumerKeypairBytes": consumer_keypair_bytes
             }),
@@ -151,37 +172,48 @@ impl PaymentEngineService {
             .json(&payload)
             .send()
             .await
-            .map_err(|e| ErrorResponse {
-                status_code: 500,
-                error: format!("Error sending request: {}", e),
+            .map_err(|e| {
+                eprintln!("Error sending request: {}", e);
+                ErrorResponse {
+                    status_code: 500,
+                    error: "Failed to send request to payment engine".to_string(),
+                }
             })?;
 
         println!("Received response status: {}", response.status());
 
-        let response_json: ApiResponse = response.json().await.map_err(|e| ErrorResponse {
-            status_code: 500,
-            error: format!("Error parsing response: {}", e),
+        let response_json: ApiResponse = response.json().await.map_err(|e| {
+            eprintln!("Error parsing response: {}", e);
+            ErrorResponse {
+                status_code: 500,
+                error: "Failed to parse response from payment engine".to_string(),
+            }
         })?;
 
         if let Some(result) = response_json.result {
             let transaction_id = result.transactionId;
-            Signature::from_str(&transaction_id).map_err(|e| ErrorResponse {
-                status_code: 500,
-                error: format!("Error parsing signature: {}", e),
+            Signature::from_str(&transaction_id).map_err(|e| {
+                eprintln!("Error parsing signature: {}", e);
+                ErrorResponse {
+                    status_code: 500,
+                    error: "Failed to parse transaction signature".to_string(),
+                }
             })
         } else if let Some(error) = response_json.error {
             let error_message = error
                 .get("message")
                 .and_then(|v| v.as_str())
                 .unwrap_or("Unknown error");
+            eprintln!("Error from payment engine: {}", error_message);
             Err(ErrorResponse {
                 status_code: 500,
-                error: error_message.to_string(),
+                error: "Payment engine returned an error".to_string(),
             })
         } else {
+            eprintln!("Invalid response from server");
             Err(ErrorResponse {
                 status_code: 500,
-                error: "Invalid response from server".to_string(),
+                error: "Invalid response from payment engine".to_string(),
             })
         }
     }
@@ -197,9 +229,12 @@ impl PaymentEngineService {
         let request_payload = Payload {
             jsonrpc: "2.0".to_string(),
             method: "confirm_selling".to_string(),
-            params: serde_json::to_value(payload).map_err(|e| ErrorResponse {
-                status_code: 500,
-                error: format!("Error serializing payload: {}", e),
+            params: serde_json::to_value(payload).map_err(|e| {
+                eprintln!("Error serializing payload: {}", e);
+                ErrorResponse {
+                    status_code: 500,
+                    error: "Failed to serialize request payload".to_string(),
+                }
             })?,
             id: 1,
         };
@@ -211,37 +246,48 @@ impl PaymentEngineService {
             .json(&request_payload)
             .send()
             .await
-            .map_err(|e| ErrorResponse {
-                status_code: 500,
-                error: format!("Error sending request: {}", e),
+            .map_err(|e| {
+                eprintln!("Error sending request: {}", e);
+                ErrorResponse {
+                    status_code: 500,
+                    error: "Failed to send request to payment engine".to_string(),
+                }
             })?;
 
         println!("Received response status: {}", response.status());
 
-        let response_json: ApiResponse = response.json().await.map_err(|e| ErrorResponse {
-            status_code: 500,
-            error: format!("Error parsing response: {}", e),
+        let response_json: ApiResponse = response.json().await.map_err(|e| {
+            eprintln!("Error parsing response: {}", e);
+            ErrorResponse {
+                status_code: 500,
+                error: "Failed to parse response from payment engine".to_string(),
+            }
         })?;
 
         if let Some(result) = response_json.result {
             let transaction_id = result.transactionId;
-            Signature::from_str(&transaction_id).map_err(|e| ErrorResponse {
-                status_code: 500,
-                error: format!("Error parsing signature: {}", e),
+            Signature::from_str(&transaction_id).map_err(|e| {
+                eprintln!("Error parsing signature: {}", e);
+                ErrorResponse {
+                    status_code: 500,
+                    error: "Failed to parse transaction signature".to_string(),
+                }
             })
         } else if let Some(error) = response_json.error {
             let error_message = error
                 .get("message")
                 .and_then(|v| v.as_str())
                 .unwrap_or("Unknown error");
+            eprintln!("Error from payment engine: {}", error_message);
             Err(ErrorResponse {
                 status_code: 500,
-                error: error_message.to_string(),
+                error: "Payment engine returned an error".to_string(),
             })
         } else {
+            eprintln!("Invalid response from server");
             Err(ErrorResponse {
                 status_code: 500,
-                error: "Invalid response from server".to_string(),
+                error: "Invalid response from payment engine".to_string(),
             })
         }
     }
@@ -257,9 +303,12 @@ impl PaymentEngineService {
         let request_payload = Payload {
             jsonrpc: "2.0".to_string(),
             method: "confirm_buying".to_string(),
-            params: serde_json::to_value(payload).map_err(|e| ErrorResponse {
-                status_code: 500,
-                error: format!("Error serializing payload: {}", e),
+            params: serde_json::to_value(payload).map_err(|e| {
+                eprintln!("Error serializing payload: {}", e);
+                ErrorResponse {
+                    status_code: 500,
+                    error: "Failed to serialize request payload".to_string(),
+                }
             })?,
             id: 1,
         };
@@ -271,37 +320,48 @@ impl PaymentEngineService {
             .json(&request_payload)
             .send()
             .await
-            .map_err(|e| ErrorResponse {
-                status_code: 500,
-                error: format!("Error sending request: {}", e),
+            .map_err(|e| {
+                eprintln!("Error sending request: {}", e);
+                ErrorResponse {
+                    status_code: 500,
+                    error: "Failed to send request to payment engine".to_string(),
+                }
             })?;
 
         println!("Received response status: {}", response.status());
 
-        let response_json: ApiResponse = response.json().await.map_err(|e| ErrorResponse {
-            status_code: 500,
-            error: format!("Error parsing response: {}", e),
+        let response_json: ApiResponse = response.json().await.map_err(|e| {
+            eprintln!("Error parsing response: {}", e);
+            ErrorResponse {
+                status_code: 500,
+                error: "Failed to parse response from payment engine".to_string(),
+            }
         })?;
 
         if let Some(result) = response_json.result {
             let transaction_id = result.transactionId;
-            Signature::from_str(&transaction_id).map_err(|e| ErrorResponse {
-                status_code: 500,
-                error: format!("Error parsing signature: {}", e),
+            Signature::from_str(&transaction_id).map_err(|e| {
+                eprintln!("Error parsing signature: {}", e);
+                ErrorResponse {
+                    status_code: 500,
+                    error: "Failed to parse transaction signature".to_string(),
+                }
             })
         } else if let Some(error) = response_json.error {
             let error_message = error
                 .get("message")
                 .and_then(|v| v.as_str())
                 .unwrap_or("Unknown error");
+            eprintln!("Error from payment engine: {}", error_message);
             Err(ErrorResponse {
                 status_code: 500,
-                error: error_message.to_string(),
+                error: "Payment engine returned an error".to_string(),
             })
         } else {
+            eprintln!("Invalid response from server");
             Err(ErrorResponse {
                 status_code: 500,
-                error: "Invalid response from server".to_string(),
+                error: "Invalid response from payment engine".to_string(),
             })
         }
     }
