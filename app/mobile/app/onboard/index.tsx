@@ -73,7 +73,7 @@ export default function Onboard() {
                         ]}
                         onPressIn={() => setIsButtonPressed(true)}
                         onPressOut={() => setIsButtonPressed(false)}
-                        onPress={() => router.push("/onboard/step-2")}
+                        onPress={() => router.push("/onboard/step-2/index")}
                     >
                         <Text style={styles.buttonLabel}>Next</Text>
                     </Pressable>

@@ -35,7 +35,7 @@ export default function RootLayout() {
 	return (
 		<GestureHandlerRootView style={{ flex: 1 }}>
 			<AuthProvider>
-				<StatusBar barStyle="light-content" />
+				<StatusBar barStyle="dark-content" />
 				<ThemeProvider
 					value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
 				>
@@ -45,7 +45,6 @@ export default function RootLayout() {
 						}}
 					>
 						<Stack.Screen name="onboard" />
-						<Stack.Screen name="index" />
 						<Stack.Screen
 							name="+not-found"
 							options={{ title: "Not Found" }}

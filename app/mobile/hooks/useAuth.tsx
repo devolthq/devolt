@@ -47,6 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 			if (storedToken) {
 				setToken(storedToken);
 				const storedUser = await AsyncStorage.getItem("user");
+				console.log("Stored user:", storedUser);
 				if (storedUser) setUser(JSON.parse(storedUser));
 			}
 			setIsLoading(false);

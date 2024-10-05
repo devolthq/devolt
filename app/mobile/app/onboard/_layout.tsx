@@ -28,7 +28,10 @@ export default function OnboardLayout() {
 				}}
 			>
 				<Stack.Screen name="index" options={{ title: "Onboarding" }} />
-				<Stack.Screen name="step-2" options={{ title: "Step 2" }} />
+				<Stack.Screen
+					name="step-2/index"
+					options={{ title: "Step 2" }}
+				/>
 			</Stack>
 		</ThemeProvider>
 	);
