@@ -31,7 +31,9 @@ export default function LoginLayout() {
 					headerLeft: () => (
 						<Pressable
 							style={styles.backButton}
-							onPress={() => router.back()}
+							onPress={() => {
+								router.push("/onboard");
+							}}
 						>
 							<Ionicons
 								name="arrow-back"

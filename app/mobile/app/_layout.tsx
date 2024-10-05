@@ -12,6 +12,7 @@ import "react-native-reanimated";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { StatusBar } from "react-native";
 import { AuthProvider } from "@/hooks/useAuth";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -32,24 +33,26 @@ export default function RootLayout() {
 	}
 
 	return (
-		<AuthProvider>
-			<StatusBar barStyle="light-content" />
-			<ThemeProvider
-				value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-			>
-				<Stack
-					screenOptions={{
-						headerShown: false,
-					}}
+		<GestureHandlerRootView style={{ flex: 1 }}>
+			<AuthProvider>
+				<StatusBar barStyle="light-content" />
+				<ThemeProvider
+					value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
 				>
-					<Stack.Screen name="onboard" />
-					<Stack.Screen name="index" />
-					<Stack.Screen
-						name="+not-found"
-						options={{ title: "Not Found" }}
-					/>
-				</Stack>
-			</ThemeProvider>
-		</AuthProvider>
+					<Stack
+						screenOptions={{
+							headerShown: false,
+						}}
+					>
+						<Stack.Screen name="onboard" />
+						<Stack.Screen name="index" />
+						<Stack.Screen
+							name="+not-found"
+							options={{ title: "Not Found" }}
+						/>
+					</Stack>
+				</ThemeProvider>
+			</AuthProvider>
+		</GestureHandlerRootView>
 	);
 }

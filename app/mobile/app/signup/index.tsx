@@ -6,6 +6,7 @@ import {
 	Pressable,
 	StyleSheet,
 	Alert,
+	ActivityIndicator,
 } from "react-native";
 import { signUp, login } from "@/services/authService";
 import Animated, {
@@ -19,6 +20,7 @@ export default function Signup() {
 	const [name, setName] = useState("John Doe");
 	const [email, setEmail] = useState("john.doe@email.com");
 	const [password, setPassword] = useState("password");
+	const [loading, setLoading] = useState(false);
 
 	const fadeAnim = useSharedValue(0);
 	const slideAnim = useSharedValue(300);
@@ -37,19 +39,16 @@ export default function Signup() {
 	}));
 
 	const handleSignup = async () => {
+		setLoading(true);
 		try {
-			// Fazendo o cadastro do usuário
 			const signupResponse = await signUp(name, email, password);
 			Alert.alert("Success", `Welcome ${signupResponse.name}!`);
-
-			// Realizando o login automaticamente após o cadastro
 			const loginResponse = await login(email, password);
-			Alert.alert("Success", `Logged in as ${loginResponse.user.name}!`);
-
-			// Redirecionar para a página principal ou dashboard após o login automático
 			router.replace("/");
 		} catch (error) {
 			Alert.alert("Error", error.message);
+		} finally {
+			setLoading(false);
 		}
 	};
 
@@ -86,8 +85,16 @@ export default function Signup() {
 					secureTextEntry
 				/>
 
-				<Pressable style={styles.signupButton} onPress={handleSignup}>
-					<Text style={styles.buttonLabel}>Sign Up</Text>
+				<Pressable
+					style={styles.signupButton}
+					onPress={handleSignup}
+					disabled={loading}
+				>
+					{loading ? (
+						<ActivityIndicator size="small" color="#1e1e1e" />
+					) : (
+						<Text style={styles.buttonLabel}>Sign Up</Text>
+					)}
 				</Pressable>
 
 				<Pressable onPress={() => router.push("/login")}>

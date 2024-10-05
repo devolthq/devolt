@@ -6,6 +6,7 @@ import {
 	Pressable,
 	StyleSheet,
 	Alert,
+	ActivityIndicator,
 } from "react-native";
 import Animated, {
 	useSharedValue,
@@ -18,6 +19,7 @@ import { login } from "@/services/authService";
 export default function Login() {
 	const [email, setEmail] = useState("producer@email.com");
 	const [password, setPassword] = useState("password");
+	const [loading, setLoading] = useState(false);
 
 	const fadeAnim = useSharedValue(0);
 	const slideAnim = useSharedValue(300);
@@ -36,12 +38,14 @@ export default function Login() {
 	}));
 
 	const handleLogin = async () => {
+		setLoading(true);
 		try {
 			const response = await login(email, password);
-			// Alert.alert("Success", `Welcome back ${response.user.name}!`);
 			router.replace("/");
 		} catch (error) {
 			Alert.alert("Error", error.message);
+		} finally {
+			setLoading(false);
 		}
 	};
 
@@ -70,8 +74,16 @@ export default function Login() {
 					secureTextEntry
 				/>
 
-				<Pressable style={styles.loginButton} onPress={handleLogin}>
-					<Text style={styles.buttonLabel}>Login</Text>
+				<Pressable
+					style={styles.loginButton}
+					onPress={handleLogin}
+					disabled={loading}
+				>
+					{loading ? (
+						<ActivityIndicator size="small" color="#1e1e1e" />
+					) : (
+						<Text style={styles.buttonLabel}>Login</Text>
+					)}
 				</Pressable>
 
 				<Pressable onPress={() => router.push("/signup")}>
