@@ -1,9 +1,10 @@
+import { API_URL } from "@/constants/API";
+import { User } from "@/hooks/useAuth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
-const API_URL = "http://localhost:5500";
 
-export interface User {
+export interface UserResponse {
 	id: string;
 	name: string;
 	email: string;
@@ -18,7 +19,7 @@ export interface SignupResponse {
 }
 
 export interface LoginResponse {
-	user: User;
+	userResponse: UserResponse;
 	token: string;
 }
 

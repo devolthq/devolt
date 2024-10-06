@@ -17,6 +17,7 @@ pub struct SellEnergyRequest {
 #[derive(Debug, Serialize)]
 pub struct SellEnergyResponse {
     pub signature: String,
+    pub escrow_public_key: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -55,11 +56,12 @@ pub async fn sell_energy_handler(
         )
     })?;
 
-    let signature = pes.sell_energy(&producer_keypair, payload).await;
+    let result = pes.sell_energy(&producer_keypair, payload).await;
 
-    match signature {
-        Ok(signature) => Ok(Json(SellEnergyResponse {
+    match result {
+        Ok((signature, escrow_public_key)) => Ok(Json(SellEnergyResponse {
             signature: signature.to_string(),
+            escrow_public_key,
         })),
         Err(e) => {
             eprintln!("Failed to sell energy: {}", e.error);
@@ -77,6 +79,7 @@ pub async fn sell_energy_handler(
 #[derive(Debug, Serialize)]
 pub struct BuyEnergyResponse {
     pub signature: String,
+    pub escrow_public_key: String,
 }
 
 pub async fn buy_energy_handler(
@@ -114,11 +117,12 @@ pub async fn buy_energy_handler(
         energy_amount: payload.energy_amount,
     };
 
-    let signature = pes.buy_energy(&consumer_keypair, buy_energy_request).await;
+    let result = pes.buy_energy(&consumer_keypair, buy_energy_request).await;
 
-    match signature {
-        Ok(signature) => Ok(Json(BuyEnergyResponse {
+    match result {
+        Ok((signature, escrow_public_key)) => Ok(Json(BuyEnergyResponse {
             signature: signature.to_string(),
+            escrow_public_key,
         })),
         Err(e) => {
             eprintln!("Failed to buy energy: {}", e.error);

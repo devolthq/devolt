@@ -8,7 +8,7 @@ use anchor_client::{
 use payment_engine::{DeVoltEscrow, EscrowState};
 use tokio::{
     task,
-    time::{interval, sleep, Duration},
+    time::{sleep, Duration},
 };
 
 use crate::{db::AppState, solana::PaymentEngineService};
@@ -21,7 +21,7 @@ pub fn run(app_state: Arc<AppState>) {
     task::spawn(async move {
         let mut retries = 0;
         loop {
-            let delay = Duration::from_secs(30 * (2_u64.pow(retries)));
+            let delay = Duration::from_secs(5 * (2_u64.pow(retries)));
             sleep(delay).await;
             let success = check_for_confirmations(
                 devolt_bytes.clone(),
@@ -87,8 +87,9 @@ async fn check_for_confirmations(
                     let processing_transactions_clone = processing_transactions.clone();
                     task::spawn(async move {
                         let pes = PaymentEngineService::new(&cloned_url);
-                        let signature = pes.confirm_buying(pubkey_string.clone()).await;
-                        match signature {
+                        let response = pes.confirm_buying(pubkey_string.clone()).await;
+
+                        match response {
                             Ok(signature) => {
                                 println!("Confirmed buying: {:?}", signature);
                             }
@@ -96,18 +97,22 @@ async fn check_for_confirmations(
                                 eprintln!("Failed to confirm buying: {:?}", e);
                             }
                         }
-                        let mut processing_transactions_guard = processing_transactions_clone.lock().unwrap();
+
+                        let mut processing_transactions_guard =
+                            processing_transactions_clone.lock().unwrap();
                         processing_transactions_guard.remove(&pubkey_string);
                     });
                 }
+                // payment_engine::TransactionType::Sell => {}
                 payment_engine::TransactionType::Sell => {
                     println!("Confirmation needed for selling escrow: {:?}", pubkey);
                     let cloned_url = url.clone();
                     let processing_transactions_clone = processing_transactions.clone();
                     task::spawn(async move {
                         let pes = PaymentEngineService::new(&cloned_url);
-                        let signature = pes.confirm_selling(pubkey_string.clone()).await;
-                        match signature {
+                        let response = pes.confirm_selling(pubkey_string.clone()).await;
+
+                        match response {
                             Ok(signature) => {
                                 println!("Confirmed selling: {:?}", signature);
                             }
@@ -115,7 +120,9 @@ async fn check_for_confirmations(
                                 eprintln!("Failed to confirm selling: {:?}", e);
                             }
                         }
-                        let mut processing_transactions_guard = processing_transactions_clone.lock().unwrap();
+
+                        let mut processing_transactions_guard =
+                            processing_transactions_clone.lock().unwrap();
                         processing_transactions_guard.remove(&pubkey_string);
                     });
                 }

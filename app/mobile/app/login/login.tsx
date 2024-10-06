@@ -20,7 +20,7 @@ import { useAuth } from "@/hooks/useAuth";
 import deVoltLogo from "@/assets/images/devolt-logo.png";
 
 export default function Login() {
-	const [email, setEmail] = useState("john.doe@email.com");
+	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("password");
 	const [isLoading, setIsLoading] = useState(false);
 
@@ -28,8 +28,8 @@ export default function Login() {
 	const slideAnim = useSharedValue(300);
 
 	useEffect(() => {
-		fadeAnim.value = withTiming(1, { duration: 750 });
-		slideAnim.value = withTiming(0, { duration: 750 });
+		fadeAnim.value = withTiming(1, { duration: 500 });
+		slideAnim.value = withTiming(0, { duration: 500 });
 	}, [fadeAnim, slideAnim]);
 
 	const fadeStyle = useAnimatedStyle(() => ({
@@ -37,7 +37,7 @@ export default function Login() {
 	}));
 
 	const slideStyle = useAnimatedStyle(() => ({
-		transform: [{ translateY: slideAnim.value }],
+		transform: [{ translateX: slideAnim.value }],
 	}));
 
 	const { isLoggedIn, login } = useAuth();
@@ -60,6 +60,9 @@ export default function Login() {
 				router.replace("/home");
 			}
 		}
+		const randomEmail =
+			Math.random() < 0.5 ? "matheus@email.com" : "marcelo@email.com";
+		setEmail(randomEmail);
 	}, [isLoggedIn, isLoading]);
 
 	return (
@@ -80,6 +83,7 @@ export default function Login() {
 					placeholderTextColor="#aaa"
 					value={email}
 					onChangeText={setEmail}
+					autoCapitalize="none"
 					keyboardType="email-address"
 				/>
 
@@ -129,8 +133,8 @@ const styles = StyleSheet.create({
 	logo: {
 		width: "100%",
 		height: undefined,
-		aspectRatio: 2, // Adjust this ratio to match the original aspect ratio of the image
-		maxHeight: 200, // Set a maximum height to prevent it from taking too much space
+		aspectRatio: 2,
+		maxHeight: 200,
 		marginBottom: 20,
 	},
 	title: {

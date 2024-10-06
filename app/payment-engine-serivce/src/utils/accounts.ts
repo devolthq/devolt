@@ -12,7 +12,9 @@ export async function getOrCreateTokenAccount(
 	owner: PublicKey,
 	allowOwnerOffCurve: boolean = false
 ): Promise<PublicKey> {
-	console.log(`Creating or retrieving for ${owner.toBase58()}`);
+	console.log(
+		`Creating or retrieving token account for ${owner.toBase58()} with mint ${mint.toBase58()}`
+	);
 	try {
 		const tokenAccount = await getOrCreateAssociatedTokenAccount(
 			connection,
@@ -21,10 +23,15 @@ export async function getOrCreateTokenAccount(
 			owner,
 			allowOwnerOffCurve
 		);
+		console.log(
+			`Successfully created or retrieved token account: ${tokenAccount.address.toBase58()}`
+		);
 		return tokenAccount.address;
 	} catch (error: any) {
 		console.error(
-			`Failed to create or retrieve token account for ${owner.toBase58()}: ${error}`
+			`Failed to create or retrieve token account for ${owner.toBase58()} with mint ${mint.toBase58()}: ${
+				error.message
+			}`
 		);
 		throw error;
 	}
@@ -34,9 +41,16 @@ export async function getOrCreateTokenAccountPDA(
 	connection: Connection,
 	payer: Keypair,
 	mint: PublicKey,
-	owner: PublicKey
+	owner: PublicKey,
+	allowOwnerOffCurve: boolean = false
 ): Promise<PublicKey> {
-	return getOrCreateTokenAccount(connection, payer, mint, owner, true);
+	return getOrCreateTokenAccount(
+		connection,
+		payer,
+		mint,
+		owner,
+		allowOwnerOffCurve
+	);
 }
 
 export async function initializeAccounts(

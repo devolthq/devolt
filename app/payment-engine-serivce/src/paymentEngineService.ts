@@ -88,7 +88,8 @@ export async function sellEnergy(params: {
 	seed: number;
 	usdcAmount: number;
 }): Promise<
-	{ transactionId: string } | { error: { code: number; message: string } }
+	| { transactionId: string; escrowPublicKey: string }
+	| { error: { code: number; message: string } }
 > {
 	const { producerKeypairBytes, seed, usdcAmount } = params;
 	console.log("Received params:", params);
@@ -155,6 +156,7 @@ export async function sellEnergy(params: {
 			producerBalanceUSDC.value.uiAmount
 		);
 		const requiredUsdcAmount = usdcAmountBN.toNumber();
+
 		if (
 			producerBalanceUSDC.value.uiAmount !== null &&
 			producerBalanceUSDC.value.uiAmount < requiredUsdcAmount
@@ -162,18 +164,24 @@ export async function sellEnergy(params: {
 			const mintAmount =
 				requiredUsdcAmount - producerBalanceUSDC.value.uiAmount;
 			console.log(
-				`Minting ${mintAmount} USDC to Producer's USDC Account...`
+				`Minting ${mintAmount} USDC to Consumer's USDC Account ${producerUsdcAccount.toBase58()}`
 			);
-			await mintTo(
-				connection,
-				devoltKeypair,
-				usdcMint,
-				producerUsdcAccount,
-				devoltKeypair.publicKey,
-				mintAmount * 1_000_000 // Convert to smallest unit
-			);
-			console.log("Minted additional USDC.");
+			try {
+				await mintTo(
+					connection,
+					devoltKeypair,
+					usdcMint,
+					producerUsdcAccount,
+					devoltKeypair.publicKey,
+					mintAmount * 1_000_000
+				);
+				console.log(`Minting successful`);
+			} catch (error: any) {
+				console.error(`Minting failed: ${error.message}`);
+				throw error;
+			}
 		}
+
 		const tx = await program.methods
 			.sellEnergy(seedBN, usdcAmountBN)
 			.accounts(accounts)
@@ -188,7 +196,10 @@ export async function sellEnergy(params: {
 			voltMint,
 		]);
 
-		return { transactionId: tx };
+		return {
+			transactionId: tx,
+			escrowPublicKey: devoltEscrowPDA.toBase58(),
+		};
 	} catch (error: any) {
 		if (error.logs) {
 			const specificLog = error.logs.find((log: string) =>
@@ -231,7 +242,8 @@ export async function buyEnergy(params: {
 	seed: number;
 	energyAmount: number;
 }): Promise<
-	{ transactionId: string } | { error: { code: number; message: string } }
+	| { transactionId: string; escrowPublicKey: string }
+	| { error: { code: number; message: string } }
 > {
 	const { consumerKeypairBytes, seed, energyAmount } = params;
 	console.log("Received params:", params);
@@ -278,7 +290,8 @@ export async function buyEnergy(params: {
 			connection,
 			devoltKeypair,
 			usdcMint,
-			devoltEscrowPDA
+			devoltEscrowPDA,
+			true
 		);
 		const accounts = {
 			devolt: devoltKeypair.publicKey,
@@ -303,6 +316,7 @@ export async function buyEnergy(params: {
 			consumerBalanceUSDC.value.uiAmount
 		);
 		const requiredUsdcAmount = energyAmountBN.toNumber();
+
 		if (
 			consumerBalanceUSDC.value.uiAmount !== null &&
 			consumerBalanceUSDC.value.uiAmount < requiredUsdcAmount
@@ -310,18 +324,24 @@ export async function buyEnergy(params: {
 			const mintAmount =
 				requiredUsdcAmount - consumerBalanceUSDC.value.uiAmount;
 			console.log(
-				`Minting ${mintAmount} USDC to Consumer's USDC Account...`
+				`Minting ${mintAmount} USDC to Consumer's USDC Account ${consumerUsdcAccount.toBase58()}`
 			);
-			await mintTo(
-				connection,
-				devoltKeypair,
-				usdcMint,
-				consumerUsdcAccount,
-				devoltKeypair.publicKey,
-				mintAmount * 1_000_000 // Convert to smallest unit
-			);
-			console.log("Minted additional USDC.");
+			try {
+				await mintTo(
+					connection,
+					devoltKeypair,
+					usdcMint,
+					consumerUsdcAccount,
+					devoltKeypair.publicKey,
+					mintAmount * 1_000_000
+				);
+				console.log(`Minting successful`);
+			} catch (error: any) {
+				console.error(`Minting failed: ${error.message}`);
+				throw error;
+			}
 		}
+
 		const tx = await program.methods
 			.buyEnergy(seedBN, energyAmountBN)
 			.accounts(accounts)
@@ -336,7 +356,10 @@ export async function buyEnergy(params: {
 			voltMint,
 		]);
 
-		return { transactionId: tx };
+		return {
+			transactionId: tx,
+			escrowPublicKey: devoltEscrowPDA.toBase58(),
+		};
 	} catch (error: any) {
 		console.error("Error in buyEnergy:", error);
 		return {

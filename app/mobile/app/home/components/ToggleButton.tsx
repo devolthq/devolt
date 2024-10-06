@@ -1,6 +1,5 @@
-import React from "react";
-import { Pressable, Text, StyleSheet } from "react-native";
-import Animated from "react-native-reanimated";
+import React, { useState } from "react";
+import { Pressable, StyleSheet } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 interface ToggleButtonProps {
@@ -12,6 +11,8 @@ export const ToggleButton: React.FC<ToggleButtonProps> = ({
 	mode,
 	setMode,
 }) => {
+	const [isPressed, setIsPressed] = useState(false);
+
 	const toggleMode = () => {
 		const newMode = mode === 0 ? 1 : 0;
 		setMode(newMode);
@@ -19,15 +20,17 @@ export const ToggleButton: React.FC<ToggleButtonProps> = ({
 	};
 
 	return (
-		<Pressable style={styles.toggleButton} onPress={toggleMode}>
+		<Pressable
+			style={styles.toggleButton}
+			onPressIn={() => setIsPressed(true)}
+			onPressOut={() => setIsPressed(false)}
+			onPress={toggleMode}
+		>
 			<Ionicons
 				name={mode === 0 ? "swap-horizontal" : "swap-horizontal"}
-				size={24}
-				color="#42FF4E"
+				size={22}
+				color={isPressed ? "#fff" : "#aaa"}
 			/>
-			<Text style={styles.toggleButtonText}>
-				Switch to {mode === 0 ? "Supplying Mode" : "Charging Mode"}
-			</Text>
 		</Pressable>
 	);
 };
@@ -37,15 +40,11 @@ const styles = StyleSheet.create({
 		flexDirection: "row",
 		alignItems: "center",
 		backgroundColor: "#101010",
-		borderWidth: 1,
-		borderColor: "#42FF4E",
 		padding: 10,
 		borderRadius: 10,
 		justifyContent: "center",
-		marginVertical: 20,
 	},
 	toggleButtonText: {
-		color: "#42FF4E",
 		fontSize: 16,
 		fontWeight: "bold",
 		marginLeft: 10,
