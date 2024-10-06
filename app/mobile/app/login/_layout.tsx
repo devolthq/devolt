@@ -19,7 +19,7 @@ export default function LoginLayout() {
 		console.log("isLoggedIn: ", isLoggedIn, "isLoading: ", isLoading);
 
 		if (!isLoading && isLoggedIn) {
-            router.replace("/");
+			router.replace("/home");
 		}
 	}, [isLoggedIn, isLoading]);
 
@@ -27,7 +27,7 @@ export default function LoginLayout() {
 		<Stack
 			screenOptions={{
 				headerStyle: {
-					backgroundColor: "#000",
+					backgroundColor: "#101010",
 				},
 				headerLeft: () => (
 					<Pressable
@@ -42,7 +42,7 @@ export default function LoginLayout() {
 				headerTitle: "",
 			}}
 		>
-			<Stack.Screen name="index" options={{}} />
+			<Stack.Screen name="login" options={{}} />
 		</Stack>
 	);
 }

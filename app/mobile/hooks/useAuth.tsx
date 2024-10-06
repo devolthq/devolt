@@ -6,13 +6,28 @@ import {
 	storeToken,
 } from "@/services/authService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import teslaModelX from "@/assets/images/tesla-model-x.png";
 import { router } from "expo-router";
 
-interface User {
+export interface Vehicle {
+	manufacturer: "BYD" | "Tesla";
+	model: "Dolphin" | "Model X";
+	year: 2019 | 2020 | 2021;
+	type: "hybrid" | "electric";
+	color: "black";
+	image?: string;
+	battery: {
+		capacity: number; // in kWh
+		current_charge: number; // in % 0 to 1
+	};
+}
+
+export interface User {
 	id: string;
 	name: string;
 	email: string;
 	public_key: string;
+	vehicle: Vehicle;
 }
 
 interface AuthContextProps {
@@ -60,7 +75,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 		setIsLoading(true);
 		try {
 			const { user, token } = await loginService(email, password);
-			setUser(user);
+
+			let vehicle: Vehicle = {
+				manufacturer: "Tesla",
+				color: "black",
+				model: "Model X",
+				year: 2021,
+				type: "electric",
+				image: teslaModelX.uri,
+				battery: {
+					capacity: 100,
+					current_charge: 0.8,
+				},
+			};
+
+			setUser({ ...user, vehicle });
 			setToken(token);
 			setIsLoggedIn(true);
 
@@ -79,7 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 		setToken(null);
 		setIsLoggedIn(false);
 		await AsyncStorage.removeItem("user");
-		router.replace("/onboard");
+		router.replace("/onboard/onboard");
 	};
 
 	return (

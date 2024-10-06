@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 
 const API_URL = "http://localhost:5500";
 
@@ -26,40 +27,43 @@ export async function signUp(
 	email: string,
 	password: string
 ): Promise<SignupResponse> {
-	const response = await fetch(`${API_URL}/user/sign_up`, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify({ name, email, password }),
-	});
-
-	if (!response.ok) {
+	try {
+		const response = await axios.post(`${API_URL}/user/sign_up`, {
+			name,
+			email,
+			password,
+		});
+		return response.data;
+	} catch (error) {
 		throw new Error("Failed to sign up");
 	}
-
-	return await response.json();
 }
 
 export async function login(
 	email: string,
 	password: string
 ): Promise<LoginResponse> {
-	const response = await fetch(`${API_URL}/user/login`, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify({ email, password }),
-	});
-
-	if (!response.ok) {
+	try {
+		const response = await axios.post(`${API_URL}/user/login`, {
+			email,
+			password,
+		});
+		console.log("Login response:", response.data);
+		const data: LoginResponse = response.data;
+		await storeToken(data.token);
+		return data;
+	} catch (error) {
+		if (axios.isAxiosError(error)) {
+			console.error(
+				"Axios error:",
+				error.response?.status,
+				error.response?.data
+			);
+		} else {
+			console.error("Unexpected error:", error);
+		}
 		throw new Error("Failed to login");
 	}
-
-	const data: LoginResponse = await response.json();
-	await storeToken(data.token);
-	return data;
 }
 
 export async function storeToken(token: string): Promise<void> {

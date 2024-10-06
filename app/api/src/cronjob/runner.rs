@@ -8,7 +8,7 @@ use anchor_client::{
 use payment_engine::{DeVoltEscrow, EscrowState};
 use tokio::{
     task,
-    time::{interval, Duration},
+    time::{interval, sleep, Duration},
 };
 
 use crate::{db::AppState, solana::PaymentEngineService};
@@ -18,17 +18,22 @@ pub fn run(app_state: Arc<AppState>) {
     let url = Arc::new(app_state.payment_engine_service_url.clone());
     let processing_transactions = Arc::new(Mutex::new(HashSet::new()));
 
-    let mut interval = interval(Duration::from_secs(30));
-
     task::spawn(async move {
+        let mut retries = 0;
         loop {
-            interval.tick().await;
-            check_for_confirmations(
+            let delay = Duration::from_secs(30 * (2_u64.pow(retries)));
+            sleep(delay).await;
+            let success = check_for_confirmations(
                 devolt_bytes.clone(),
                 url.clone(),
                 processing_transactions.clone(),
             )
             .await;
+            if success {
+                retries = 0;
+            } else {
+                retries += 1;
+            }
         }
     });
 }
@@ -37,18 +42,22 @@ async fn check_for_confirmations(
     devolt_bytes: Vec<u8>,
     url: Arc<String>,
     processing_transactions: Arc<Mutex<HashSet<String>>>,
-) {
-    let devolt = Keypair::from_bytes(&devolt_bytes).expect("Failed to create devolt keypair");
+) -> bool {
+    let devolt = match Keypair::from_bytes(&devolt_bytes) {
+        Ok(keypair) => keypair,
+        Err(e) => {
+            eprintln!("Failed to create devolt keypair: {:?}", e);
+            return false;
+        }
+    };
     let program_id = payment_engine::ID;
-    let cluster = 
-        // Cluster::Testnet;
-        Cluster::Localnet;
+    let cluster = Cluster::Localnet;
     let client = Client::new_with_options(cluster, &devolt, CommitmentConfig::processed());
     let program = match client.program(program_id) {
         Ok(program) => program,
         Err(e) => {
             eprintln!("Failed to get program: {:?}", e);
-            return;
+            return false;
         }
     };
 
@@ -56,7 +65,7 @@ async fn check_for_confirmations(
         Ok(accounts) => accounts,
         Err(e) => {
             eprintln!("Failed to get accounts: {:?}", e);
-            return;
+            return false;
         }
     };
 
@@ -113,4 +122,5 @@ async fn check_for_confirmations(
             }
         }
     }
+    true
 }

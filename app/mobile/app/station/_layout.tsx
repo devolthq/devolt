@@ -1,7 +1,6 @@
 import { useFonts } from "expo-font";
 import { router, Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/useColorScheme";
@@ -12,30 +11,38 @@ import { useAuth } from "@/hooks/useAuth";
 SplashScreen.preventAutoHideAsync();
 
 export default function StationLayout() {
-	const colorScheme = useColorScheme();
-	const { isLoggedIn, isLoading } = useAuth();
-
-	useEffect(() => {
-		console.log("isLoggedIn: ", isLoggedIn, "isLoading: ", isLoading);
-
-		if (!isLoading && isLoggedIn) {
-			router.replace("/");
-		}
-	}, [isLoggedIn, isLoading]);
-
 	return (
 		<Stack
 			screenOptions={{
-				headerShown: false,
+				headerStyle: {
+					backgroundColor: "#101010",
+				},
+				header: () => (
+					<Pressable
+						style={styles.backButton}
+						onPress={() => {
+							router.back();
+						}}
+					>
+						<Ionicons name="arrow-back" size={24} color="#fff" />
+					</Pressable>
+				),
+				headerTitle: "",
 			}}
 		>
-			<Stack.Screen name="[id]" options={{ title: "Station" }} />
+			<Stack.Screen name="[id]" />
 		</Stack>
 	);
 }
 
 const styles = StyleSheet.create({
 	backButton: {
-		marginLeft: 15,
+		position: "absolute",
+		marginTop: 80,
+		top: 0,
+		left: 20,
+		padding: 4,
+		backgroundColor: "#101010",
+		borderRadius: 10,
 	},
 });

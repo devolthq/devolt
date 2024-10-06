@@ -1,3 +1,4 @@
+import "@/utils/polyfills";
 import {
 	DarkTheme,
 	DefaultTheme,
@@ -7,14 +8,15 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
-import "react-native-reanimated";
-
 import { useColorScheme } from "@/hooks/useColorScheme";
-import { StatusBar } from "react-native";
 import { AuthProvider } from "@/hooks/useAuth";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 SplashScreen.preventAutoHideAsync();
+
+import { LogBox } from "react-native";
+LogBox.ignoreLogs(["Warning: ..."]);
+LogBox.ignoreAllLogs();
 
 export default function RootLayout() {
 	const colorScheme = useColorScheme();
@@ -42,19 +44,7 @@ export default function RootLayout() {
 						screenOptions={{
 							headerShown: false,
 						}}
-					>
-						<Stack.Screen name="onboard" />
-						<Stack.Screen
-							name="+not-found"
-							options={{ title: "Not Found" }}
-						/>
-						<Stack.Screen
-							name="station/[station]/index"
-							options={{
-								title: "Station",
-							}}
-						/>
-					</Stack>
+					/>
 				</ThemeProvider>
 			</AuthProvider>
 		</GestureHandlerRootView>

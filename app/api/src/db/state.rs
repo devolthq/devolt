@@ -93,8 +93,8 @@ async fn create_table(pool: &SqlitePool) {
 
     let users = vec![
         (
-            "Consumer",
-            "consumer@email.com",
+            "Mary Smith Jane",
+            "mary.jane@email.com",
             "password",
             Keypair::from_bytes(&[
                 121, 225, 52, 151, 9, 51, 15, 189, 164, 202, 191, 246, 15, 218, 89, 28, 208, 161,
@@ -105,8 +105,8 @@ async fn create_table(pool: &SqlitePool) {
             .unwrap(), // con9L1bjbUHHJiLLBbzBwWXmyerS54Hw5kEhvf4YkQS
         ),
         (
-            "Producer",
-            "producer@email.com",
+            "John Tom Doe",
+            "john.doe@email.com",
             "password",
             Keypair::from_bytes(&[
                 239, 244, 218, 57, 218, 179, 145, 208, 32, 225, 107, 208, 180, 142, 142, 181, 121,

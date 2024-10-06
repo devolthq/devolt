@@ -1,3 +1,4 @@
+import React from "react";
 import { Link, router, Stack } from "expo-router";
 import { Pressable, StyleSheet } from "react-native";
 
@@ -15,7 +16,7 @@ export default function NotFoundScreen() {
 					<ThemedText type="link">Go back</ThemedText>
 				</Pressable>
 
-				<Link href="/" style={styles.link}>
+				<Link href="/home" style={styles.link}>
 					<ThemedText type="link">Go to home screen!</ThemedText>
 				</Link>
 			</ThemedView>

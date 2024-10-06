@@ -11,15 +11,12 @@ import { View, TextInput, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated from "react-native-reanimated";
 import { useAuth } from "@/hooks/useAuth";
-import Home from "@/index";
 import { useEffect } from "react";
 import { router } from "expo-router";
 
 SplashScreen.preventAutoHideAsync();
 
-function CustomHeader({ navigation, searchBar = true }) {
-	const { logout } = useAuth();
-
+export function CustomHeader({ navigation, searchBar = true }) {
 	return (
 		<Animated.View style={styles.topBar}>
 			<Pressable
@@ -66,12 +63,10 @@ function CustomDrawerContent(props) {
 	);
 }
 
-export default function IndexLayout() {
+export default function HomeLayout() {
 	const { isLoggedIn, isLoading } = useAuth();
 
 	useEffect(() => {
-		console.log("isLoggedIn: ", isLoggedIn, "isLoading: ", isLoading);
-
 		if (!isLoading && !isLoggedIn) {
 			router.replace("/onboard");
 		}
@@ -83,11 +78,11 @@ export default function IndexLayout() {
 				screenOptions={{
 					header: (props) => <CustomHeader {...props} />,
 					headerStyle: {
-						backgroundColor: "#000",
+						backgroundColor: "#101010",
 						zIndex: 1,
 					},
 					drawerStyle: {
-						backgroundColor: "#000",
+						backgroundColor: "#101010",
 					},
 					drawerActiveTintColor: "#FFF",
 					drawerInactiveTintColor: "#8a8a8a",
@@ -95,7 +90,7 @@ export default function IndexLayout() {
 				drawerContent={(props) => <CustomDrawerContent {...props} />}
 			>
 				<Drawer.Screen
-					name="index"
+					name="home"
 					options={{
 						title: "Home",
 						drawerIcon: ({ color, size }) => (
@@ -150,7 +145,7 @@ const styles = StyleSheet.create({
 		width: "100%",
 	},
 	menuButton: {
-		backgroundColor: "#000",
+		backgroundColor: "#101010",
 		...sharedStyles.rounded,
 		width: 40,
 		height: 40,
@@ -159,7 +154,7 @@ const styles = StyleSheet.create({
 	searchBar: {
 		...sharedStyles.flexRow,
 		alignItems: "center",
-		backgroundColor: "#000",
+		backgroundColor: "#101010",
 		height: 40,
 		...sharedStyles.rounded,
 		paddingHorizontal: 10,
@@ -174,7 +169,7 @@ const styles = StyleSheet.create({
 		height: 40,
 	},
 	topBarButton: {
-		backgroundColor: "#000",
+		backgroundColor: "#101010",
 		...sharedStyles.rounded,
 		width: 40,
 		height: 40,

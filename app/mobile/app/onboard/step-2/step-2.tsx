@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		paddingTop: 40,
 		paddingVertical: 20,
-		backgroundColor: "#000",
+		backgroundColor: "#101010",
 	},
 	semiBoldText: {
 		fontSize: 24,
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
 		width: "90%",
 	},
 	signupButton: {
-		backgroundColor: "#1e1e1e",
+		backgroundColor: "#000",
 		paddingVertical: 10,
 		paddingHorizontal: 20,
 		borderRadius: 5,

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
 	View,
 	Text,
@@ -8,19 +8,19 @@ import {
 	Alert,
 	ActivityIndicator,
 } from "react-native";
+import { signUp, login } from "@/services/authService";
 import Animated, {
 	useSharedValue,
 	useAnimatedStyle,
 	withTiming,
 } from "react-native-reanimated";
 import { router } from "expo-router";
-import { login } from "@/services/authService";
-import { useAuth } from "@/hooks/useAuth";
 
-export default function Login() {
-	const [email, setEmail] = useState("producer@email.com");
+export default function Signup() {
+	const [name, setName] = useState("John Doe");
+	const [email, setEmail] = useState("john.doe@email.com");
 	const [password, setPassword] = useState("password");
-	const [isLoading, setIsLoading] = useState(false);
+	const [loading, setLoading] = useState(false);
 
 	const fadeAnim = useSharedValue(0);
 	const slideAnim = useSharedValue(300);
@@ -38,36 +38,34 @@ export default function Login() {
 		transform: [{ translateY: slideAnim.value }],
 	}));
 
-	const { isLoggedIn, login } = useAuth();
-
-	const handleLogin = async () => {
-		setIsLoading(true);
+	const handleSignup = async () => {
+		setLoading(true);
 		try {
-			await login(email, password);
+			const signupResponse = await signUp(name, email, password);
+			Alert.alert("Success", `Welcome ${signupResponse.name}!`);
+			const loginResponse = await login(email, password);
+			router.replace("/home");
 		} catch (error) {
 			Alert.alert("Error", error.message);
-			console.error("Login error:", error);
 		} finally {
-			setIsLoading(false);
+			setLoading(false);
 		}
 	};
-
-	useEffect(() => {
-		if (!isLoading) {
-			if (isLoggedIn) {
-				router.replace("/");
-			} else {
-				// router.replace("/onboard");
-			}
-		}
-	}, [isLoggedIn, isLoading]);
 
 	return (
 		<View style={styles.container}>
 			<Animated.View
 				style={[styles.formContainer, fadeStyle, slideStyle]}
 			>
-				<Text style={styles.title}>Login</Text>
+				<Text style={styles.title}>Sign Up</Text>
+
+				<TextInput
+					style={styles.input}
+					placeholder="Name"
+					placeholderTextColor="#aaa"
+					value={name}
+					onChangeText={setName}
+				/>
 
 				<TextInput
 					style={styles.input}
@@ -88,20 +86,20 @@ export default function Login() {
 				/>
 
 				<Pressable
-					style={styles.loginButton}
-					onPress={handleLogin}
-					disabled={isLoading}
+					style={styles.signupButton}
+					onPress={handleSignup}
+					disabled={loading}
 				>
-					{isLoading ? (
+					{loading ? (
 						<ActivityIndicator size="small" color="#1e1e1e" />
 					) : (
-						<Text style={styles.buttonLabel}>Login</Text>
+						<Text style={styles.buttonLabel}>Sign Up</Text>
 					)}
 				</Pressable>
 
-				<Pressable onPress={() => router.push("/signup")}>
-					<Text style={styles.signupText}>
-						Don't have an account? Sign up
+				<Pressable onPress={() => router.push("/login")}>
+					<Text style={styles.loginText}>
+						Already have an account? Login
 					</Text>
 				</Pressable>
 			</Animated.View>
@@ -115,7 +113,7 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		alignItems: "center",
 		padding: 20,
-		backgroundColor: "#000",
+		backgroundColor: "#101010",
 	},
 	formContainer: {
 		width: "100%",
@@ -130,14 +128,14 @@ const styles = StyleSheet.create({
 	input: {
 		width: "90%",
 		height: 50,
-		backgroundColor: "#1e1e1e",
+		backgroundColor: "#000",
 		borderRadius: 5,
 		marginBottom: 20,
 		paddingHorizontal: 15,
 		color: "#fff",
 		fontSize: 18,
 	},
-	loginButton: {
+	signupButton: {
 		backgroundColor: "#42FF4E",
 		paddingVertical: 10,
 		paddingHorizontal: 20,
@@ -152,7 +150,7 @@ const styles = StyleSheet.create({
 		color: "#000",
 		fontWeight: "600",
 	},
-	signupText: {
+	loginText: {
 		color: "#42FF4E",
 		fontSize: 16,
 	},

@@ -26,7 +26,7 @@ export default function SignUpLayout() {
 			<Stack
 				screenOptions={{
 					headerStyle: {
-						backgroundColor: "#000",
+						backgroundColor: "#101010",
 					},
 					headerLeft: () => (
 						<Pressable
@@ -45,7 +45,7 @@ export default function SignUpLayout() {
 					headerTitle: "",
 				}}
 			>
-				<Stack.Screen name="index" options={{}} />
+				<Stack.Screen name="signup" options={{}} />
 			</Stack>
 		</ThemeProvider>
 	);

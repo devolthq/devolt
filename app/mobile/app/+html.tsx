@@ -1,3 +1,4 @@
+import "@/utils/polyfills";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ScrollViewStyleReset } from "expo-router/html";
 import { type PropsWithChildren } from "react";

@@ -1,37 +1,56 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, Image, StyleSheet, Pressable } from "react-native";
+import {
+	View,
+	Text,
+	Image,
+	StyleSheet,
+	Pressable,
+	Dimensions,
+	ActivityIndicator,
+} from "react-native";
 import Animated, {
 	useSharedValue,
 	useAnimatedStyle,
 	withTiming,
 } from "react-native-reanimated";
-import DeVoltLogo from "@/assets/images/devolt-logo.png";
-import Car from "@/assets/images/car.png";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 
+const { width: screenWidth } = Dimensions.get("window");
+
 export default function Onboard() {
 	const [showFirstView, setShowFirstView] = useState(true);
-	const [isButtonPressed, setIsButtonPressed] = useState(false);
+	const [isLoading, setIsLoading] = useState(true);
 	const fadeAnim = useSharedValue(1);
 	const slideAnim = useSharedValue(0);
 	const secondFadeAnim = useSharedValue(0);
 	const secondSlideAnim = useSharedValue(50);
 
 	useEffect(() => {
-		const timer = setTimeout(() => {
-			fadeAnim.value = withTiming(0, { duration: 750 });
-			slideAnim.value = withTiming(-50, { duration: 750 });
+		const loadImages = async () => {
+			await new Promise((resolve) => setTimeout(resolve, 500));
+			setIsLoading(false);
+		};
 
-			setTimeout(() => {
-				setShowFirstView(false);
-				secondFadeAnim.value = withTiming(1, { duration: 500 });
-				secondSlideAnim.value = withTiming(0, { duration: 500 });
-			}, 500);
-		}, 1500);
+		loadImages();
+	}, []);
 
-		return () => clearTimeout(timer);
-	}, [fadeAnim, slideAnim, secondFadeAnim, secondSlideAnim]);
+	useEffect(() => {
+		if (!isLoading) {
+			const timer = setTimeout(() => {
+				fadeAnim.value = withTiming(0, { duration: 500 });
+				slideAnim.value = withTiming(-50, { duration: 500 });
+
+				setTimeout(() => {
+					setShowFirstView(false);
+					secondFadeAnim.value = withTiming(1, { duration: 500 });
+					secondSlideAnim.value = withTiming(0, { duration: 500 });
+				}, 500);
+			}, 1500);
+
+			return () => clearTimeout(timer);
+		}
+	}, [isLoading, fadeAnim, slideAnim, secondFadeAnim, secondSlideAnim]);
 
 	const firstAnimatedStyle = useAnimatedStyle(() => ({
 		opacity: fadeAnim.value,
@@ -43,16 +62,34 @@ export default function Onboard() {
 		transform: [{ translateX: secondSlideAnim.value }],
 	}));
 
+	if (isLoading) {
+		return (
+			<View style={styles.container}>
+				<ActivityIndicator size="large" color="#1e1e1e" />
+			</View>
+		);
+	}
+
 	return (
 		<View style={styles.container}>
 			<StatusBar style="inverted" />
 
 			{showFirstView ? (
 				<Animated.View
-					style={[styles.animatedContainer, firstAnimatedStyle]}
+					style={[
+						styles.animatedContainer,
+						firstAnimatedStyle,
+						{ justifyContent: "center" },
+					]}
 				>
-					<Image source={DeVoltLogo} />
-					<Text>Taking electric vehicles further.</Text>
+					<Image
+						source={require("@/assets/images/devolt-logo.png")}
+						style={styles.logo}
+						resizeMode="contain"
+					/>
+					<Text style={styles.semiBoldText}>
+						Taking electric vehicles further.
+					</Text>
 				</Animated.View>
 			) : (
 				<Animated.View
@@ -66,7 +103,7 @@ export default function Onboard() {
 							A completely new way to use and trade energy, right
 							at your fingertips.
 						</Text>
-						<Image source={Car} />
+						<Image source={require("@/assets/images/car.png")} />
 					</View>
 
 					<Pressable
@@ -74,9 +111,7 @@ export default function Onboard() {
 							styles.linkButton,
 							pressed && styles.buttonPressed,
 						]}
-						onPressIn={() => setIsButtonPressed(true)}
-						onPressOut={() => setIsButtonPressed(false)}
-						onPress={() => router.push("/onboard/step-2")}
+						onPress={() => router.push("/onboard/step-2/step-2")}
 					>
 						<Text style={styles.buttonLabel}>Next</Text>
 					</Pressable>
@@ -89,10 +124,10 @@ export default function Onboard() {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		justifyContent: "space-around",
+		justifyContent: "center",
 		alignItems: "center",
 		padding: 20,
-		backgroundColor: "#000",
+		backgroundColor: "#101010",
 	},
 	semiBoldText: {
 		fontSize: 24,
@@ -116,6 +151,10 @@ const styles = StyleSheet.create({
 		justifyContent: "space-evenly",
 		alignItems: "center",
 		width: "100%",
+	},
+	logo: {
+		width: screenWidth * 0.85,
+		maxHeight: 200,
 	},
 	linkButton: {
 		backgroundColor: "#42FF4E",

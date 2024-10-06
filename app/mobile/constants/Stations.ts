@@ -6,7 +6,7 @@ export interface Station {
 	batteryLevel: number;
 	maxCapacity: number;
 	meanPrice: number;
-	availablePlugs: string;
+	availablePlugs: string[];
 	maxVoltage: number;
 }
 
@@ -19,7 +19,7 @@ export const stations: Station[] = [
 		batteryLevel: 45.64,
 		maxCapacity: 5000,
 		meanPrice: 17.49,
-		availablePlugs: "BYD",
+		availablePlugs: ["BYD"],
 		maxVoltage: 220,
 	},
 	{
@@ -30,7 +30,7 @@ export const stations: Station[] = [
 		batteryLevel: 50,
 		maxCapacity: 100,
 		meanPrice: 17.92,
-		availablePlugs: "BYD",
+		availablePlugs: ["BYD", "Tesla"],
 		maxVoltage: 220,
 	},
 	{
@@ -41,7 +41,7 @@ export const stations: Station[] = [
 		batteryLevel: 71.74,
 		maxCapacity: 5000,
 		meanPrice: 17.35,
-		availablePlugs: "BYD",
+		availablePlugs: ["BYD", "Tesla"],
 		maxVoltage: 220,
 	},
 	{
@@ -52,7 +52,7 @@ export const stations: Station[] = [
 		batteryLevel: 70.24000000000001,
 		maxCapacity: 5000,
 		meanPrice: 15.93,
-		availablePlugs: "BYD",
+		availablePlugs: ["BYD"],
 		maxVoltage: 220,
 	},
 	{
@@ -63,7 +63,7 @@ export const stations: Station[] = [
 		batteryLevel: 52.959999999999994,
 		maxCapacity: 5000,
 		meanPrice: 15.09,
-		availablePlugs: "BYD",
+		availablePlugs: ["BYD", "Tesla"],
 		maxVoltage: 220,
 	},
 	{
@@ -74,7 +74,7 @@ export const stations: Station[] = [
 		batteryLevel: 55.86,
 		maxCapacity: 5000,
 		meanPrice: 17.21,
-		availablePlugs: "BYD",
+		availablePlugs: ["BYD", "Tesla"],
 		maxVoltage: 220,
 	},
 	{
@@ -85,7 +85,7 @@ export const stations: Station[] = [
 		batteryLevel: 54.08,
 		maxCapacity: 5000,
 		meanPrice: 17.25,
-		availablePlugs: "BYD",
+		availablePlugs: ["BYD"],
 		maxVoltage: 220,
 	},
 	{
@@ -97,7 +97,7 @@ export const stations: Station[] = [
 		batteryLevel: 77.12,
 		maxCapacity: 5000,
 		meanPrice: 16.76,
-		availablePlugs: "BYD",
+		availablePlugs: ["BYD", "Tesla"],
 		maxVoltage: 220,
 	},
 	{
@@ -108,7 +108,7 @@ export const stations: Station[] = [
 		batteryLevel: 92.80000000000001,
 		maxCapacity: 5000,
 		meanPrice: 15.66,
-		availablePlugs: "BYD",
+		availablePlugs: ["Tesla"],
 		maxVoltage: 220,
 	},
 	{
@@ -119,7 +119,7 @@ export const stations: Station[] = [
 		batteryLevel: 23.16,
 		maxCapacity: 5000,
 		meanPrice: 16.73,
-		availablePlugs: "BYD",
+		availablePlugs: ["Tesla"],
 		maxVoltage: 220,
 	},
 	{
@@ -130,7 +130,7 @@ export const stations: Station[] = [
 		batteryLevel: 13.600000000000001,
 		maxCapacity: 5000,
 		meanPrice: 16.19,
-		availablePlugs: "BYD",
+		availablePlugs: ["BYD", "Tesla"],
 		maxVoltage: 220,
 	},
 	{
@@ -141,7 +141,7 @@ export const stations: Station[] = [
 		batteryLevel: 76.06,
 		maxCapacity: 5000,
 		meanPrice: 15.52,
-		availablePlugs: "BYD",
+		availablePlugs: ["BYD", "Tesla"],
 		maxVoltage: 220,
 	},
 	{
@@ -152,7 +152,7 @@ export const stations: Station[] = [
 		batteryLevel: 56.56,
 		maxCapacity: 5000,
 		meanPrice: 16.41,
-		availablePlugs: "BYD",
+		availablePlugs: ["BYD", "Tesla"],
 		maxVoltage: 220,
 	},
 	{
@@ -163,7 +163,7 @@ export const stations: Station[] = [
 		batteryLevel: 3.2800000000000002,
 		maxCapacity: 5000,
 		meanPrice: 15.86,
-		availablePlugs: "BYD",
+		availablePlugs: ["BYD", "Tesla"],
 		maxVoltage: 220,
 	},
 	{
@@ -174,7 +174,7 @@ export const stations: Station[] = [
 		batteryLevel: 97.86,
 		maxCapacity: 5000,
 		meanPrice: 16.52,
-		availablePlugs: "BYD",
+		availablePlugs: ["BYD", "Tesla"],
 		maxVoltage: 220,
 	},
 	{
@@ -185,7 +185,7 @@ export const stations: Station[] = [
 		batteryLevel: 42.18,
 		maxCapacity: 5000,
 		meanPrice: 17.04,
-		availablePlugs: "BYD",
+		availablePlugs: ["BYD", "Tesla"],
 		maxVoltage: 220,
 	},
 	{
@@ -196,7 +196,7 @@ export const stations: Station[] = [
 		batteryLevel: 24.759999999999998,
 		maxCapacity: 5000,
 		meanPrice: 15.04,
-		availablePlugs: "BYD",
+		availablePlugs: ["BYD", "Tesla"],
 		maxVoltage: 220,
 	},
 	{
@@ -207,7 +207,7 @@ export const stations: Station[] = [
 		batteryLevel: 96.48,
 		maxCapacity: 5000,
 		meanPrice: 15.43,
-		availablePlugs: "BYD",
+		availablePlugs: ["BYD", "Tesla"],
 		maxVoltage: 220,
 	},
 	{
@@ -218,7 +218,7 @@ export const stations: Station[] = [
 		batteryLevel: 33.08,
 		maxCapacity: 5000,
 		meanPrice: 15.15,
-		availablePlugs: "BYD",
+		availablePlugs: ["BYD", "Tesla"],
 		maxVoltage: 220,
 	},
 	{
@@ -229,7 +229,7 @@ export const stations: Station[] = [
 		batteryLevel: 19.84,
 		maxCapacity: 5000,
 		meanPrice: 15.7,
-		availablePlugs: "BYD",
+		availablePlugs: ["BYD", "Tesla"],
 		maxVoltage: 220,
 	},
 ];

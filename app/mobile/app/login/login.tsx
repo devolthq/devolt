@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
 	View,
 	Text,
@@ -7,20 +7,22 @@ import {
 	StyleSheet,
 	Alert,
 	ActivityIndicator,
+	Image,
 } from "react-native";
-import { signUp, login } from "@/services/authService";
 import Animated, {
 	useSharedValue,
 	useAnimatedStyle,
 	withTiming,
 } from "react-native-reanimated";
 import { router } from "expo-router";
+import { login } from "@/services/authService";
+import { useAuth } from "@/hooks/useAuth";
+import deVoltLogo from "@/assets/images/devolt-logo.png";
 
-export default function Signup() {
-	const [name, setName] = useState("John Doe");
+export default function Login() {
 	const [email, setEmail] = useState("john.doe@email.com");
 	const [password, setPassword] = useState("password");
-	const [loading, setLoading] = useState(false);
+	const [isLoading, setIsLoading] = useState(false);
 
 	const fadeAnim = useSharedValue(0);
 	const slideAnim = useSharedValue(300);
@@ -38,34 +40,39 @@ export default function Signup() {
 		transform: [{ translateY: slideAnim.value }],
 	}));
 
-	const handleSignup = async () => {
-		setLoading(true);
+	const { isLoggedIn, login } = useAuth();
+
+	const handleLogin = async () => {
+		setIsLoading(true);
 		try {
-			const signupResponse = await signUp(name, email, password);
-			Alert.alert("Success", `Welcome ${signupResponse.name}!`);
-			const loginResponse = await login(email, password);
-			router.replace("/");
+			await login(email, password);
 		} catch (error) {
 			Alert.alert("Error", error.message);
+			console.error("Login error:", error);
 		} finally {
-			setLoading(false);
+			setIsLoading(false);
 		}
 	};
+
+	useEffect(() => {
+		if (!isLoading) {
+			if (isLoggedIn) {
+				router.replace("/home");
+			}
+		}
+	}, [isLoggedIn, isLoading]);
 
 	return (
 		<View style={styles.container}>
 			<Animated.View
 				style={[styles.formContainer, fadeStyle, slideStyle]}
 			>
-				<Text style={styles.title}>Sign Up</Text>
+				{/* <Image source={deVoltLogo} style={styles.logo} resizeMode="contain" /> */}
 
-				<TextInput
-					style={styles.input}
-					placeholder="Name"
-					placeholderTextColor="#aaa"
-					value={name}
-					onChangeText={setName}
-				/>
+				<Text style={styles.title}>Login</Text>
+				<Text style={styles.subtitle}>
+					Welcome back! Please login to your account.
+				</Text>
 
 				<TextInput
 					style={styles.input}
@@ -86,20 +93,20 @@ export default function Signup() {
 				/>
 
 				<Pressable
-					style={styles.signupButton}
-					onPress={handleSignup}
-					disabled={loading}
+					style={styles.loginButton}
+					onPress={handleLogin}
+					disabled={isLoading}
 				>
-					{loading ? (
+					{isLoading ? (
 						<ActivityIndicator size="small" color="#1e1e1e" />
 					) : (
-						<Text style={styles.buttonLabel}>Sign Up</Text>
+						<Text style={styles.buttonLabel}>Login</Text>
 					)}
 				</Pressable>
 
-				<Pressable onPress={() => router.push("/login")}>
-					<Text style={styles.loginText}>
-						Already have an account? Login
+				<Pressable onPress={() => router.push("/signup")}>
+					<Text style={styles.signupText}>
+						Don't have an account? Sign up
 					</Text>
 				</Pressable>
 			</Animated.View>
@@ -113,11 +120,18 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		alignItems: "center",
 		padding: 20,
-		backgroundColor: "#000",
+		backgroundColor: "#101010",
 	},
 	formContainer: {
 		width: "100%",
 		alignItems: "center",
+	},
+	logo: {
+		width: "100%",
+		height: undefined,
+		aspectRatio: 2, // Adjust this ratio to match the original aspect ratio of the image
+		maxHeight: 200, // Set a maximum height to prevent it from taking too much space
+		marginBottom: 20,
 	},
 	title: {
 		fontSize: 32,
@@ -125,17 +139,22 @@ const styles = StyleSheet.create({
 		color: "#fff",
 		marginBottom: 20,
 	},
+	subtitle: {
+		fontSize: 16,
+		color: "#aaa",
+		marginBottom: 20,
+	},
 	input: {
 		width: "90%",
 		height: 50,
-		backgroundColor: "#1e1e1e",
+		backgroundColor: "#000",
 		borderRadius: 5,
 		marginBottom: 20,
 		paddingHorizontal: 15,
 		color: "#fff",
 		fontSize: 18,
 	},
-	signupButton: {
+	loginButton: {
 		backgroundColor: "#42FF4E",
 		paddingVertical: 10,
 		paddingHorizontal: 20,
@@ -150,7 +169,7 @@ const styles = StyleSheet.create({
 		color: "#000",
 		fontWeight: "600",
 	},
-	loginText: {
+	signupText: {
 		color: "#42FF4E",
 		fontSize: 16,
 	},
