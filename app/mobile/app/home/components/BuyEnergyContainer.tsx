@@ -172,7 +172,9 @@ export const BuyEnergyContainer: React.FC<PurchaseContainerProps> = ({
 						</View>
 						<Text style={{ color: "#fff", textAlign: "center" }}>
 							Estimated Cost: ${" "}
-							{Math.ceil(parseInt(batteryAmount))}
+							{batteryAmount
+								? Math.ceil(parseInt(batteryAmount))
+								: "0.00"}
 						</Text>
 					</View>
 
@@ -218,7 +220,22 @@ export const BuyEnergyContainer: React.FC<PurchaseContainerProps> = ({
 						return;
 					}
 
-					onPurchase(batteryAmount);
+					Alert.alert(
+						"Confirm Purchase",
+						`Are you sure you want to purchase ${batteryAmount} kWh for $${Math.ceil(
+							parseInt(batteryAmount)
+						)}?`,
+						[
+							{
+								text: "Cancel",
+								style: "cancel",
+							},
+							{
+								text: "Confirm",
+								onPress: () => onPurchase(batteryAmount),
+							},
+						]
+					);
 				}}
 				activeOpacity={0.7}
 			>

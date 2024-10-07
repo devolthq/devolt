@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useAuth, User } from "@/hooks/useAuth";
 import {
 	View,
 	Text,
 	StyleSheet,
-	StatusBar,
 	ScrollView,
 	Image,
+	ActivityIndicator,
 } from "react-native";
 import CreditCard from "@/components/CreditCard";
 import { ExternalLink } from "@/components/ExternalLink";
@@ -19,6 +19,7 @@ import {
 	getOrCreateAssociatedTokenAccount,
 	TokenAccountNotFoundError,
 } from "@solana/spl-token";
+import { StatusBar } from "expo-status-bar";
 
 const keypair = Keypair.fromSecretKey(
 	new Uint8Array([
@@ -33,11 +34,9 @@ const keypair = Keypair.fromSecretKey(
 export default function Profile() {
 	const { user }: { user: User | null } = useAuth();
 	const [usdcBalance, setUsdcBalance] = useState<string | null>(null);
+	const scrollViewRef = useRef<ScrollView>(null);
 
 	const connection = new Connection(RPC_URL);
-	connection.getEpochInfo().then((info) => {
-		console.log("Epoch info:", info);
-	});
 
 	useEffect(() => {
 		const fetchUsdcBalance = async () => {
@@ -52,8 +51,8 @@ export default function Profile() {
 						await getOrCreateAssociatedTokenAccount(
 							connection,
 							keypair,
-							publicKey,
-							usdcMint
+							usdcMint,
+							publicKey
 						).then((account) => account.address);
 
 					const balance = await connection.getTokenAccountBalance(
@@ -86,110 +85,173 @@ export default function Profile() {
 		fetchUsdcBalance();
 	}, [user]);
 
+	useEffect(() => {
+		const scrollToSections = () => {
+			const sectionContainers = [
+				"profileSection",
+				"financialSection",
+				"bankSection",
+				"vehicleSection",
+			];
+
+			sectionContainers.forEach((section, index) => {
+				setTimeout(() => {
+					scrollViewRef.current?.scrollTo({
+						y: 250 * index,
+						animated: true,
+					});
+				}, index * 1500);
+			});
+		};
+
+		scrollToSections();
+	}, []);
+
 	const capitalizeWords = (str: string) => {
 		return str.replace(/\b\w/g, (char) => char.toUpperCase());
 	};
 
-	if (!user) {
-		return (
-			<View style={styles.container}>
-				<Text style={styles.errorText}>User not found</Text>
-			</View>
-		);
-	}
-
 	return (
 		<ScrollView
+			ref={scrollViewRef}
 			style={styles.container}
 			contentContainerStyle={styles.contentContainer}
 		>
-			<StatusBar barStyle="light-content" />
+			<StatusBar style="inverted" />
 
-			<View style={styles.sectionContainer}>
-				<Text style={styles.title}>Profile</Text>
-				<View style={styles.sectionContent}>
-					<Text style={styles.contentTitle}>Name</Text>
-					<Text style={styles.contentText}>{user.name}</Text>
+			{user ? (
+				<>
+					<View
+						style={styles.sectionContainer}
+						nativeID="profileSection"
+					>
+						<Text style={styles.title}>Profile</Text>
+						<View style={styles.sectionContent}>
+							<Text style={styles.contentTitle}>Name</Text>
+							<Text style={styles.contentText}>{user.name}</Text>
 
-					<Text style={styles.contentTitle}>Email</Text>
-					<Text style={styles.contentText}>{user.email}</Text>
-				</View>
-			</View>
-
-			<View style={styles.sectionContainer}>
-				<Text style={styles.title}>Financial information</Text>
-
-				<Text style={styles.contentTitle}>Credit Card</Text>
-				<View style={styles.sectionContent}>
-					<CreditCard
-						cardName={user.name}
-						cardNumber={"3865458954123654"}
-						cardExpiry={"12/25"}
-					/>
-				</View>
-
-				<Text style={styles.contentTitle}>Public Key</Text>
-				<ExternalLink
-					style={{ ...styles.contentText, gap: 5 }}
-					href={`https://solscan.io/account/${user.public_key}?cluster=custom&customUrl=https://9959-2a01-4f9-1a-b149-00-2.ngrok-free.app`}
-				>
-					{user.public_key} <Ionicons name="open-outline" size={18} />
-				</ExternalLink>
-
-				{usdcBalance !== null && usdcBalance != "0.00" && (
-					<View style={styles.sectionContent}>
-						<Text style={styles.contentTitle}>Balance</Text>
-						<Text style={styles.contentText}>
-							$ {usdcBalance} USD
-						</Text>
+							<Text style={styles.contentTitle}>Email</Text>
+							<Text style={styles.contentText}>{user.email}</Text>
+						</View>
 					</View>
-				)}
-			</View>
 
-			{user.vehicle && (
-				<View style={styles.sectionContainer}>
-					<Text style={styles.title}>Vehicle Information</Text>
+					<View
+						style={styles.sectionContainer}
+						nativeID="financialSection"
+					>
+						<Text style={styles.title}>Financial information</Text>
 
-					<Text style={styles.contentTitle}>Manufacturer</Text>
-					<Text style={styles.contentText}>
-						{capitalizeWords(user.vehicle.manufacturer)}
-					</Text>
+						<Text style={styles.contentTitle}>Credit Card</Text>
+						<View style={styles.sectionContent}>
+							<CreditCard
+								cardName={user.name}
+								cardNumber={"3865458954123654"}
+								cardExpiry={"12/25"}
+							/>
+						</View>
 
-					<Text style={styles.contentTitle}>Model</Text>
-					<Text style={styles.contentText}>
-						{capitalizeWords(user.vehicle.model)}
-					</Text>
+						<Text style={styles.contentTitle}>Public Key</Text>
+						<ExternalLink
+							style={{ ...styles.contentText, gap: 5 }}
+							href={`https://solscan.io/account/${user.public_key}?cluster=custom&customUrl=${RPC_URL}`}
+						>
+							{user.public_key}{" "}
+							<Ionicons name="open-outline" size={18} />
+						</ExternalLink>
 
-					<Text style={styles.contentTitle}>Year</Text>
-					<Text style={styles.contentText}>{user.vehicle.year}</Text>
+						{usdcBalance !== null && usdcBalance != "0.00" && (
+							<View style={styles.sectionContent}>
+								<Text style={styles.contentTitle}>Balance</Text>
+								<Text style={styles.contentText}>
+									$ {usdcBalance} USD
+								</Text>
+							</View>
+						)}
+					</View>
 
-					{user.vehicle.image && (
-						<Image
-							source={{ uri: user.vehicle.image }}
-							style={styles.image}
-						/>
+					<View
+						style={styles.sectionContainer}
+						nativeID="bankSection"
+					>
+						<Text style={styles.title}>Bank Account</Text>
+
+						<Text style={styles.contentTitle}>Bank Name</Text>
+						<Text style={styles.contentText}>BTG Pactual</Text>
+
+						<Text style={styles.contentTitle}>Account Number</Text>
+						<Text style={styles.contentText}>****1092</Text>
+
+						<Text style={styles.contentTitle}>Routing Number</Text>
+						<Text style={styles.contentText}>*****8953</Text>
+
+						<Text style={styles.contentTitle}>Account Type</Text>
+						<Text style={styles.contentText}>Checking</Text>
+
+						<Text style={styles.contentTitle}>Account Holder</Text>
+						<Text style={styles.contentText}>{user.name}</Text>
+					</View>
+
+					{user.vehicle && (
+						<View
+							style={styles.sectionContainer}
+							nativeID="vehicleSection"
+						>
+							<Text style={styles.title}>
+								Vehicle Information
+							</Text>
+
+							<Text style={styles.contentTitle}>
+								Manufacturer
+							</Text>
+							<Text style={styles.contentText}>
+								{capitalizeWords(user.vehicle.manufacturer)}
+							</Text>
+
+							<Text style={styles.contentTitle}>Model</Text>
+							<Text style={styles.contentText}>
+								{capitalizeWords(user.vehicle.model)}
+							</Text>
+
+							<Text style={styles.contentTitle}>Year</Text>
+							<Text style={styles.contentText}>
+								{user.vehicle.year}
+							</Text>
+
+							{user.vehicle.image && (
+								<Image
+									source={{ uri: user.vehicle.image }}
+									style={styles.image}
+								/>
+							)}
+
+							<Text style={styles.contentTitle}>Type</Text>
+							<Text style={styles.contentText}>
+								{capitalizeWords(user.vehicle.type)}
+							</Text>
+
+							<Text style={styles.contentTitle}>Color</Text>
+							<Text style={styles.contentText}>
+								{capitalizeWords(user.vehicle.color)}
+							</Text>
+
+							<Text style={styles.contentTitle}>
+								Battery Capacity
+							</Text>
+							<Text style={styles.contentText}>
+								{user.vehicle.battery.capacity} kWh
+							</Text>
+
+							<Text style={styles.contentTitle}>
+								Current Charge
+							</Text>
+							<Text style={styles.contentText}>
+								{user.vehicle.battery.current_charge * 100}%
+							</Text>
+						</View>
 					)}
-
-					<Text style={styles.contentTitle}>Type</Text>
-					<Text style={styles.contentText}>
-						{capitalizeWords(user.vehicle.type)}
-					</Text>
-
-					<Text style={styles.contentTitle}>Color</Text>
-					<Text style={styles.contentText}>
-						{capitalizeWords(user.vehicle.color)}
-					</Text>
-
-					<Text style={styles.contentTitle}>Battery Capacity</Text>
-					<Text style={styles.contentText}>
-						{user.vehicle.battery.capacity} kWh
-					</Text>
-
-					<Text style={styles.contentTitle}>Current Charge</Text>
-					<Text style={styles.contentText}>
-						{user.vehicle.battery.current_charge * 100}%
-					</Text>
-				</View>
+				</>
+			) : (
+				<ActivityIndicator size="large" color="#42FF4E" />
 			)}
 		</ScrollView>
 	);

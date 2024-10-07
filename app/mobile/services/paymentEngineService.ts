@@ -9,15 +9,12 @@ export type TransactionResponse = {
 };
 
 const axiosInstance = axios.create({
-	timeout: 3000000,
+	timeout: 30000000,
 });
 
 export const sellEnergy = async (
 	usdcAmount: number
 ): Promise<TransactionResponse> => {
-	const delay = (ms: number) =>
-		new Promise((resolve) => setTimeout(resolve, ms));
-
 	try {
 		const token = await getToken();
 		let response = await axiosInstance.post(
@@ -48,13 +45,11 @@ export const buyEnergy = async (
 	energyAmount: number
 ): Promise<TransactionResponse> => {
 	try {
-		const voltTokens = energyAmount * 100;
-
 		const token = await getToken();
 		const response = await axiosInstance.post(
 			`${API_URL}/payment_engine/buy_energy`,
 			{
-				energy_amount: voltTokens,
+				energy_amount: energyAmount,
 			},
 			{
 				headers: {

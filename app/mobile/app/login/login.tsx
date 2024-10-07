@@ -18,10 +18,11 @@ import { router } from "expo-router";
 import { login } from "@/services/authService";
 import { useAuth } from "@/hooks/useAuth";
 import deVoltLogo from "@/assets/images/devolt-logo.png";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function Login() {
 	const [email, setEmail] = useState("");
-	const [password, setPassword] = useState("password");
+	const [password, setPassword] = useState(/*"password"*/);
 	const [isLoading, setIsLoading] = useState(false);
 
 	const fadeAnim = useSharedValue(0);
@@ -61,8 +62,9 @@ export default function Login() {
 			}
 		}
 		const randomEmail =
-			Math.random() < 0.5 ? "matheus@email.com" : "marcelo@email.com";
-		setEmail(randomEmail);
+			// "matheus@email.com";
+			"marcelo@email.com";
+		// setEmail(randomEmail);
 	}, [isLoggedIn, isLoading]);
 
 	return (
@@ -107,6 +109,23 @@ export default function Login() {
 						<Text style={styles.buttonLabel}>Login</Text>
 					)}
 				</Pressable>
+
+				<View style={styles.divider} />
+
+				<View style={{ flexDirection: "row", gap: 10 }}>
+					<Ionicons
+						name="logo-google"
+						size={32}
+						color="#fff"
+						style={{ marginBottom: 20 }}
+					/>
+					<Ionicons
+						name="logo-facebook"
+						size={32}
+						color="#fff"
+						style={{ marginBottom: 20 }}
+					/>
+				</View>
 
 				<Pressable onPress={() => router.push("/signup")}>
 					<Text style={styles.signupText}>
@@ -176,5 +195,11 @@ const styles = StyleSheet.create({
 	signupText: {
 		color: "#42FF4E",
 		fontSize: 16,
+	},
+	divider: {
+		width: "90%",
+		height: 1,
+		backgroundColor: "#333",
+		marginVertical: 20,
 	},
 });

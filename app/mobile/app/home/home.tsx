@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import {
 	View,
 	Text,
-	StatusBar,
 	Alert,
 	ScrollView,
 	Pressable,
@@ -34,15 +33,11 @@ import {
 	SellEnergyContainer,
 } from "./components/SellEnergyContainer";
 import { ExternalLink } from "@/components/ExternalLink";
-import {
-	buyEnergy,
-	sellAndConfirmEnergy,
-	sellEnergy,
-} from "@/services/paymentEngineService";
-import QRCode from "qrcode";
+import { buyEnergy, sellEnergy } from "@/services/paymentEngineService";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { getAccount } from "@solana/spl-token";
 import { RPC_URL } from "@/constants/Solana";
+import { StatusBar } from "expo-status-bar";
 
 export default function Home() {
 	const { getUser, isLoggedIn } = useAuth();
@@ -128,23 +123,7 @@ export default function Home() {
 
 	const [transactionLoading, setTransactionLoading] = useState(false);
 	const [transactionUrl, setTransactionUrl] = useState<string>();
-	// "https://solscan.io/tx/4jEMAvvXMz8rvc6GtRakpXbEqtfGmiZW1UPsWxNmNi3PWre9d8A6ruXg6vXRPt1DbrjmR2apLYp6oNhipyURx36b?cluster=custom&customUrl=https://9959-2a01-4f9-1a-b149-00-2.ngrok-free.app"
-
-	const [qrCodeDataUrl, setQrCodeDataUrl] = useState("");
-	const generateQrCode = async () => {
-		try {
-			const qrCode = await QRCode.toDataURL(transactionUrl, {
-				errorCorrectionLevel: "H",
-				type: "image/png",
-			});
-			setQrCodeDataUrl(qrCode);
-			setTransactionUrl(transactionUrl);
-		} catch (error) {
-			console.error("Failed to generate QR Code", error);
-		} finally {
-			setTransactionLoading(false);
-		}
-	};
+	const [buyValue, setBuyValue] = useState("");
 
 	const handlePurchase = async (batteryAmount: string) => {
 		if (!selectedStation) {
@@ -154,18 +133,26 @@ export default function Home() {
 
 		try {
 			setTransactionLoading(true);
+			translateY.value = withSpring(250, {
+				damping: 20,
+				stiffness: 90,
+			});
 
 			const energyAmount = parseFloat(batteryAmount);
+			setBuyValue(batteryAmount);
 			const response = await buyEnergy(energyAmount);
 
-			const url = `https://solscan.io/tx/${response.signature}?cluster=custom&customUrl=https://9959-2a01-4f9-1a-b149-00-2.ngrok-free.app`;
+			const url = `https://solscan.io/tx/${response.signature}?cluster=custom&${RPC_URL}`;
 			setTransactionUrl(url);
-			generateQrCode();
 		} catch (error) {
 			console.error("Error buying energy:", error);
 			Alert.alert("Error", "Failed to buy energy. Please try again.");
 		} finally {
 			setTransactionLoading(false);
+			translateY.value = withSpring(375, {
+				damping: 20,
+				stiffness: 90,
+			});
 		}
 	};
 
@@ -177,20 +164,27 @@ export default function Home() {
 
 		try {
 			setTransactionLoading(true);
+			translateY.value = withSpring(250, {
+				damping: 20,
+				stiffness: 90,
+			});
 
 			const energyAmount = parseFloat(data.amount);
 			const usdcAmount = energyAmount / 100;
 
 			const response = await sellEnergy(usdcAmount);
-
-			const url = `https://solscan.io/tx/${response.signature}?cluster=custom&customUrl=https://9959-2a01-4f9-1a-b149-00-2.ngrok-free.app`;
+			// https://solscan.io/tx/EzXCixpCVJy1tizwumuyY4Jb5AbjN4zcLwDzFMkQtHxhoEr9VF368wTk2NFWojX4C1pddKqdkAEg4CdG6Savsde?cluster=custom&customUrl=https://8e80-2a01-4f9-1a-b149-00-2.ngrok-free.app
+			const url = `https://solscan.io/tx/${response.signature}?cluster=custom&customUrl=${RPC_URL}`;
 			setTransactionUrl(url);
-			generateQrCode();
 		} catch (error) {
 			console.error("Error selling energy:", error);
 			Alert.alert("Error", "Failed to sell energy. Please try again.");
 		} finally {
 			setTransactionLoading(false);
+			translateY.value = withSpring(375, {
+				damping: 20,
+				stiffness: 90,
+			});
 		}
 	};
 
@@ -219,7 +213,7 @@ export default function Home() {
 
 	return (
 		<View style={styles.container}>
-			<StatusBar barStyle="dark-content" />
+			<StatusBar style="dark" />
 
 			<View style={styles.mapContainer}>
 				<MapComponent region={region} mapRef={mapRef} />
@@ -246,6 +240,7 @@ export default function Home() {
 							flex: 1,
 							height: "100%",
 						}}
+						alwaysBounceVertical={false}
 					>
 						<View style={styles.welcomeContainer}>
 							<Text style={styles.welcomeTitle}>
@@ -277,7 +272,7 @@ export default function Home() {
 										justifyContent: "space-between",
 										flexDirection: "row",
 										alignContent: "center",
-										marginHorizontal: 20,
+										paddingHorizontal: 20,
 									}}
 								>
 									<Text
@@ -445,23 +440,30 @@ export default function Home() {
 									<Text style={styles.successText}>
 										Transaction successful!
 									</Text>
-
-									<ExternalLink
-										href={transactionUrl}
-										style={styles.qrPlaceholder}
-									>
-										{qrCodeDataUrl && (
-											<Image
-												source={{
-													uri: `data:image/png;base64,${qrCodeDataUrl}`,
-												}}
-												style={{
-													width: "100%",
-													height: "100%",
-												}}
-											/>
-										)}
-									</ExternalLink>
+									{mode === 0 && (
+										<Text
+											style={{
+												color: "#fff",
+												fontSize: 16,
+												textAlign: "center",
+											}}
+										>
+											You have successfully purchased $
+											{buyValue} worth of energy.
+										</Text>
+									)}
+									{mode === 1 && (
+										<Text
+											style={{
+												color: "#fff",
+												fontSize: 16,
+												textAlign: "center",
+											}}
+										>
+											DeVolt will now analyze your energy
+											sale and credit your account.
+										</Text>
+									)}
 
 									<ExternalLink
 										href={transactionUrl}
@@ -472,6 +474,9 @@ export default function Home() {
 											alignItems: "center",
 											textDecorationLine: "underline",
 										}}
+										onPress={() => {
+											console.log(transactionUrl);
+										}}
 									>
 										View transaction{" "}
 										<Ionicons name="link" size={16} />
@@ -481,6 +486,8 @@ export default function Home() {
 										style={styles.backButton}
 										onPress={() => {
 											focusUserLocation();
+											setSelectedStation(null);
+											setBuyValue("");
 											setTransactionUrl(null);
 										}}
 									>
@@ -674,6 +681,7 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 20,
 	},
 	successContainer: {
+		marginHorizontal: 20,
 		padding: 20,
 		backgroundColor: "#1e1e1e",
 		borderRadius: 10,

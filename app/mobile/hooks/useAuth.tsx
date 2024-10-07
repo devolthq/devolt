@@ -64,7 +64,7 @@ const defaultVehicle: Vehicle = {
 	image: teslaModelX.uri,
 	battery: {
 		capacity: 100,
-		current_charge: 0.8,
+		current_charge: 0.63,
 	},
 };
 const defaultFinancialDetails: FinancialDetails = {

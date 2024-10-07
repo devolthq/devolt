@@ -9,6 +9,7 @@ import {
 	StyleSheet,
 	Switch,
 	TouchableOpacity,
+	Alert,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Station } from "@/constants/Stations";
@@ -61,13 +62,13 @@ export const SellEnergyContainer: React.FC<SellEnergyContainerProps> = ({
 		formState: { errors },
 	} = useForm<SellData>({
 		defaultValues: {
-			generationMethod: "Solar",
-			amount: "1000",
-			sellerCNPJ: "12.345.678/0001-95",
-			buyerCNPJ: "98.765.432/0001-12",
-			contractFile: null,
-			registeredInCCEE: true,
-			authorizedByANEEL: true,
+			// generationMethod: "Solar",
+			// amount: "1000",
+			// sellerCNPJ: "12.345.678/0001-95",
+			// buyerCNPJ: "98.765.432/0001-12",
+			// contractFile: null,
+			// registeredInCCEE: true,
+			// authorizedByANEEL: true,
 		},
 	});
 
@@ -80,7 +81,22 @@ export const SellEnergyContainer: React.FC<SellEnergyContainerProps> = ({
 	}, [user]);
 
 	const onSubmit = (data: SellData) => {
-		onSell(data);
+		Alert.alert(
+			"Confirm Sale",
+			`Are you sure you want to sell ${
+				data.amount
+			} kWh of energy for $${Math.ceil(parseInt(data.amount) / 100)}?`,
+			[
+				{
+					text: "Cancel",
+					style: "cancel",
+				},
+				{
+					text: "Confirm",
+					onPress: () => onSell(data),
+				},
+			]
+		);
 	};
 
 	const handleFilePick = async () => {};
@@ -135,7 +151,12 @@ export const SellEnergyContainer: React.FC<SellEnergyContainerProps> = ({
 					}}
 					render={({ field: { onChange, value } }) => (
 						<TextInput
-							style={styles.input}
+							style={{
+								...styles.input,
+								color: user?.financialDetails?.cnpj
+									? "#aaa"
+									: "#fff",
+							}}
 							placeholder="Enter your CNPJ"
 							placeholderTextColor="#aaa"
 							value={formatCNPJ(value)}
@@ -259,7 +280,10 @@ export const SellEnergyContainer: React.FC<SellEnergyContainerProps> = ({
 			{/* Registered with CCEE */}
 			<View style={styles.inputContainer}>
 				<View style={styles.labelContainer}>
-					<Text style={styles.label}>Registered with CCEE?</Text>
+					<Text style={styles.label}>
+						Registered with CCEE?
+						<Text style={{ color: "red" }}>*</Text>
+					</Text>
 				</View>
 				<Text style={styles.description}>
 					Indicate whether your company is registered with the CCEE
@@ -277,7 +301,10 @@ export const SellEnergyContainer: React.FC<SellEnergyContainerProps> = ({
 			{/* Authorized by ANEEL */}
 			<View style={styles.inputContainer}>
 				<View style={styles.labelContainer}>
-					<Text style={styles.label}>Authorized by ANEEL?</Text>
+					<Text style={styles.label}>
+						Authorized by ANEEL?
+						<Text style={{ color: "red" }}>*</Text>
+					</Text>
 				</View>
 				<Text style={styles.description}>
 					Indicate whether your company is authorized by ANEEL
@@ -305,7 +332,9 @@ export const SellEnergyContainer: React.FC<SellEnergyContainerProps> = ({
 };
 
 const styles = StyleSheet.create({
-	container: {},
+	container: {
+		paddingHorizontal: 20,
+	},
 	labelContainer: {
 		flexDirection: "row",
 		alignItems: "center",
