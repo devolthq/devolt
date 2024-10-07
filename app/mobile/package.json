@@ -17,7 +17,7 @@
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",
     "@react-native-async-storage/async-storage": "1.23.1",
-    "@react-native-picker/picker": "^2.8.1",
+    "@react-native-picker/picker": "2.7.5",
     "@react-navigation/drawer": "^6.7.2",
     "@react-navigation/native": "^6.1.18",
     "@react-navigation/stack": "^6.4.1",
@@ -43,6 +43,7 @@
     "expo-web-browser": "~13.0.3",
     "metro-react-native-babel-transformer": "^0.77.0",
     "pusher-js": "7.4.0",
+    "qrcode": "^1.5.4",
     "react": "18.2.0",
     "react-animated-3d-card": "^1.0.2",
     "react-dom": "18.2.0",

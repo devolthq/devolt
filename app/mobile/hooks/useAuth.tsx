@@ -22,12 +22,17 @@ export interface Vehicle {
 	};
 }
 
+export interface FinancialDetails {
+	cnpj: string;
+}
+
 export interface User {
 	id: string;
 	name: string;
 	email: string;
 	public_key: string;
 	vehicle: Vehicle;
+	financialDetails: FinancialDetails;
 }
 
 interface AuthContextProps {
@@ -37,6 +42,7 @@ interface AuthContextProps {
 	isLoading: boolean;
 	login: (email: string, password: string) => Promise<void>;
 	logout: () => void;
+	getUser: () => Promise<User | null>;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -48,6 +54,22 @@ export function useAuth() {
 	}
 	return context;
 }
+
+const defaultVehicle: Vehicle = {
+	manufacturer: "Tesla",
+	color: "black",
+	model: "Model X",
+	year: 2021,
+	type: "electric",
+	image: teslaModelX.uri,
+	battery: {
+		capacity: 100,
+		current_charge: 0.63,
+	},
+};
+const defaultFinancialDetails: FinancialDetails = {
+	cnpj: "12345678901234",
+};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 	children,
@@ -63,7 +85,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 			if (storedToken) {
 				setToken(storedToken);
 				const storedUser = await AsyncStorage.getItem("user");
-				if (storedUser) setUser(JSON.parse(storedUser));
+				if (storedUser) {
+					const parsedUser = JSON.parse(storedUser);
+					if (!parsedUser.vehicle) {
+						parsedUser.vehicle = defaultVehicle;
+					}
+					setUser(parsedUser);
+				}
 				setIsLoggedIn(true);
 			}
 			setIsLoading(false);
@@ -74,27 +102,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 	const login = async (email: string, password: string) => {
 		setIsLoading(true);
 		try {
-			const { user, token } = await loginService(email, password);
+			const response = await loginService(email, password);
+			console.log("Login response:", response);
 
-			let vehicle: Vehicle = {
-				manufacturer: "Tesla",
-				color: "black",
-				model: "Model X",
-				year: 2021,
-				type: "electric",
-				image: teslaModelX.uri,
-				battery: {
-					capacity: 100,
-					current_charge: 0.8,
-				},
+			const { user, token } = response;
+
+			const userData = {
+				id: user.id,
+				name: user.name,
+				email: user.email,
+				public_key: user.public_key,
+				vehicle: defaultVehicle,
+				financialDetails: defaultFinancialDetails,
 			};
 
-			setUser({ ...user, vehicle });
+			if (!userData.vehicle) {
+				userData.vehicle = defaultVehicle;
+			}
+			if (!userData.financialDetails) {
+				userData.financialDetails = defaultFinancialDetails;
+			}
+
 			setToken(token);
 			setIsLoggedIn(true);
 
 			await storeToken(token);
-			await AsyncStorage.setItem("user", JSON.stringify(user));
+			await AsyncStorage.setItem("user", JSON.stringify(userData));
+			console.log("Token stored successfully:", token);
 		} catch (error) {
 			console.error("Login error:", error);
 		} finally {
@@ -111,9 +145,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 		router.replace("/onboard/onboard");
 	};
 
+	const getUser = async (): Promise<User | null> => {
+		const storedUser = await AsyncStorage.getItem("user");
+		if (storedUser) {
+			const parsedUser = JSON.parse(storedUser);
+			if (!parsedUser.vehicle) {
+				parsedUser.vehicle = defaultVehicle;
+			}
+			return parsedUser;
+		}
+		return null;
+	};
+
 	return (
 		<AuthContext.Provider
-			value={{ user, token, isLoggedIn, isLoading, login, logout }}
+			value={{
+				user,
+				token,
+				isLoggedIn,
+				isLoading,
+				login,
+				logout,
+				getUser,
+			}}
 		>
 			{children}
 		</AuthContext.Provider>
