@@ -91,34 +91,46 @@ async fn create_table(pool: &SqlitePool) {
     .await
     .expect("Failed to create users table");
 
+    // Parse the producer private key from the environment variable as a Vec<u8>
+    let producer_keypair_bytes: Vec<u8> = std::env::var("PRODUCER_KEYPAIR_BYTES")
+        .expect("PRODUCER_KEYPAIR_BYTES is not set")
+        .trim_matches(|c| c == '[' || c == ']')
+        .split(',')
+        .map(|s| s.trim().parse().expect("Invalid byte in PRODUCER_KEYPAIR_BYTES"))
+        .collect();
+
+    // Parse the consumer private key from the environment variable as a Vec<u8>
+    let consumer_keypair_bytes: Vec<u8> = std::env::var("CONSUMER_KEYPAIR_BYTES")
+        .expect("CONSUMER_KEYPAIR_BYTES is not set")
+        .trim_matches(|c| c == '[' || c == ']')
+        .split(',')
+        .map(|s| s.trim().parse().expect("Invalid byte in CONSUMER_KEYPAIR_BYTES"))
+        .collect();
+
+    // Create Keypairs from the byte vectors
+    let producer_keypair = Keypair::from_bytes(&producer_keypair_bytes)
+        .expect("Failed to create producer Keypair");
+    let consumer_keypair = Keypair::from_bytes(&consumer_keypair_bytes)
+        .expect("Failed to create consumer Keypair");
+
     let users = vec![
         (
-            "Mary Smith Jane",
-            "mary.jane@email.com",
+            "Matheus Macedo Santos",
+            "matheus@email.com",
             "password",
-            Keypair::from_bytes(&[
-                121, 225, 52, 151, 9, 51, 15, 189, 164, 202, 191, 246, 15, 218, 89, 28, 208, 161,
-                240, 200, 2, 231, 81, 66, 218, 90, 141, 222, 95, 25, 9, 144, 9, 44, 56, 131, 62,
-                16, 193, 9, 61, 110, 143, 41, 117, 75, 164, 61, 187, 83, 242, 209, 132, 204, 39,
-                163, 220, 40, 111, 20, 126, 79, 28, 99,
-            ])
-            .unwrap(), // con9L1bjbUHHJiLLBbzBwWXmyerS54Hw5kEhvf4YkQS
+            producer_keypair, // producer keypair for Matheus
         ),
         (
-            "John Tom Doe",
-            "john.doe@email.com",
+            "Marcelo Gomes Feitoza",
+            "marcelo@email.com",
             "password",
-            Keypair::from_bytes(&[
-                239, 244, 218, 57, 218, 179, 145, 208, 32, 225, 107, 208, 180, 142, 142, 181, 121,
-                154, 217, 67, 212, 74, 19, 23, 115, 16, 254, 206, 40, 85, 201, 78, 12, 66, 158, 97,
-                110, 253, 230, 194, 145, 180, 124, 92, 250, 137, 222, 58, 192, 93, 56, 208, 134,
-                34, 192, 85, 113, 32, 168, 50, 209, 111, 105, 107,
-            ])
-            .unwrap(), // prozjgfrKQP59jGSXJkNKNSVFKCZNnS7FRqAt7dnvpA
+            consumer_keypair, // consumer keypair for Marcelo
         ),
     ];
 
     for (index, (name, email, password, keypair)) in users.iter().enumerate() {
+        println!("{:?}", keypair.to_base58_string());
+
         let public_key = keypair.pubkey().to_string();
         let private_key = keypair.to_bytes().to_vec();
 

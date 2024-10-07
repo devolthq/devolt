@@ -1,9 +1,7 @@
 #!/bin/bash
 
-# Start the test validator and log output
-# light test-validator
+solana config set --url localhost
 
-# Create tokens and log output
 solana airdrop 2
 
 echo "Creating tokens..."
@@ -18,3 +16,7 @@ solana airdrop 5 con9L1bjbUHHJiLLBbzBwWXmyerS54Hw5kEhvf4YkQS
 solana airdrop 5 prozjgfrKQP59jGSXJkNKNSVFKCZNnS7FRqAt7dnvpA
 
 anchor deploy --provider.cluster localnet
+
+# Then:
+# light test-validator
+# solana-teste-validator

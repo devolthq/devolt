@@ -1,2 +1,2 @@
-export const USDC_MINT = "NQ3zHt1hfaLNNiM5hizxMgNxaaJ689SnNw7w4ZZz3Zr";
-export const VOLT_MINT = "6s73RA8zaxqTExweiMR5AFV7guFWodyAybtGKvx5FyHL";
+export const USDC_MINT = "6tUsS6DoCVNgo6eyfChcg2MLHds5HnqoH7NYo6JMXSB9";
+export const VOLT_MINT = "GG41daTaQcELJcfGDaVRsFVjZ6W6Wb5WEqCNH4RAgcPP";

@@ -1,14 +1,7 @@
 import * as anchor from "@coral-xyz/anchor";
-import {
-	Connection,
-	Keypair,
-	PublicKey,
-	SendTransactionError,
-	SystemProgram,
-} from "@solana/web3.js";
+import { Keypair, PublicKey, SystemProgram } from "@solana/web3.js";
 import {
 	ASSOCIATED_TOKEN_PROGRAM_ID,
-	getAssociatedTokenAddress,
 	getOrCreateAssociatedTokenAccount,
 	mintTo,
 	TOKEN_PROGRAM_ID,
@@ -17,9 +10,10 @@ import { PaymentEngine } from "../../../target/types/payment_engine";
 import PaymentEngineIDL from "../../../target/idl/payment_engine.json";
 import dotenv from "dotenv";
 import {
+	ensureDevoltUsdcBalance,
 	getOrCreateTokenAccount,
-	getOrCreateTokenAccountPDA,
 	initializeAccounts,
+	retryGetOrCreateTokenAccount,
 } from "./utils/accounts";
 
 dotenv.config();
@@ -44,7 +38,7 @@ const voltMint = new PublicKey(VOLT_MINT);
 
 const connection = new anchor.web3.Connection(
 	// anchor.web3.clusterApiUrl("devnet")
-	"http://localhost:8899"
+	"http://127.0.0.1:8899"
 );
 const wallet = new anchor.Wallet(devoltKeypair);
 const provider = new anchor.AnchorProvider(connection, wallet, {});
@@ -55,297 +49,209 @@ console.log("voltMint:", voltMint.toBase58());
 
 anchor.setProvider(provider);
 
-const programId = new PublicKey(DEVOLT_PAYMENT_ENGINE_ID);
+// new PublicKey(DEVOLT_PAYMENT_ENGINE_ID),
 const program = new anchor.Program<PaymentEngine>(
 	PaymentEngineIDL as any,
 	provider
 );
 
-async function logBalances(
+async function ensureSolBalance(
+	keypair: Keypair,
 	connection: anchor.web3.Connection,
-	pubkey: PublicKey,
-	mints: PublicKey[]
+	minimumSol: number = 1
 ) {
+	const balance = await connection.getBalance(keypair.publicKey);
+	console.log(
+		`Current SOL balance for ${keypair.publicKey.toBase58()}: ${
+			balance / anchor.web3.LAMPORTS_PER_SOL
+		} SOL`
+	);
+	if (balance < minimumSol * anchor.web3.LAMPORTS_PER_SOL) {
+		console.log(
+			`Airdropping ${minimumSol} SOL to ${keypair.publicKey.toBase58()}`
+		);
+		const airdropSignature = await connection.requestAirdrop(
+			keypair.publicKey,
+			minimumSol * anchor.web3.LAMPORTS_PER_SOL
+		);
+		await connection.confirmTransaction(airdropSignature, "confirmed");
+		console.log(`Airdrop complete for ${keypair.publicKey.toBase58()}`);
+	}
+}
+
+// Função auxiliar para configurar as contas
+function createBuyAccountsSetup(consumerPubKey: PublicKey, devoltEscrowPDA: PublicKey) {
+	return {
+		devolt: devoltKeypair.publicKey,
+		consumer: consumerPubKey,
+		usdcMint,
+		voltMint,
+		associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+		tokenProgram: TOKEN_PROGRAM_ID,
+		systemProgram: SystemProgram.programId,
+	};
+}
+
+function createSellAccountsSetup(producerPubKey: PublicKey, devoltEscrowPDA: PublicKey) {
+	return {
+		devolt: devoltKeypair.publicKey,
+		producer: producerPubKey,
+		usdcMint,
+		voltMint,
+		associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+		tokenProgram: TOKEN_PROGRAM_ID,
+		systemProgram: SystemProgram.programId,
+	};
+}
+
+// Função para registrar o saldo das contas
+async function logBalances(connection: anchor.web3.Connection, pubkey: PublicKey, mints: PublicKey[]) {
 	for (const mint of mints) {
-		const tokenAccount = await getOrCreateAssociatedTokenAccount(
-			connection,
-			devoltKeypair,
-			mint,
-			pubkey
-		);
-		const balance = await connection.getTokenAccountBalance(
-			tokenAccount.address
-		);
-		console.log(
-			`${pubkey.toBase58()} Balance for ${mint.toBase58()}:`,
-			balance.value.uiAmount
-		);
+		const tokenAccount = await getOrCreateAssociatedTokenAccount(connection, devoltKeypair, mint, pubkey);
+		const balance = await connection.getTokenAccountBalance(tokenAccount.address);
+		console.log(`${pubkey.toBase58()} Balance for ${mint.toBase58()}:`, balance.value.uiAmount);
 	}
 }
 
-export async function sellEnergy(params: {
-	producerKeypairBytes: number[];
-	seed: number;
-	usdcAmount: number;
-}): Promise<
-	{ transactionId: string } | { error: { code: number; message: string } }
-> {
+// Função genérica para garantir que o saldo está acima do mínimo necessário (SOL ou USDC)
+async function ensureBalance(type: 'SOL' | 'USDC', keypair: Keypair, account: PublicKey, requiredAmount: number) {
+	if (type === 'SOL') {
+		await ensureSolBalance(keypair, connection, requiredAmount);
+	} else if (type === 'USDC') {
+		await ensureDevoltUsdcBalance(connection, devoltKeypair, account, usdcMint, requiredAmount);
+	}
+}
+
+// Função genérica para tratamento de erro
+function handleError(error: any) {
+	console.error("Error:", error.message || "Internal error");
+	if (error.logs) {
+		const specificLog = error.logs.find((log: string) => log.includes("Allocate: account Address"));
+		if (specificLog) {
+			const address = specificLog.split(" ")[2];
+			console.error(`Account ${address} already exists`);
+			return { error: { code: -32603, message: `Account ${address} already exists` } };
+		}
+	}
+	return { error: { code: -32603, message: error.message || "Internal error" } };
+}
+
+// Função para manipular o processo de venda de energia
+export async function sellEnergy(params: { producerKeypairBytes: number[]; seed: number; usdcAmount: number }) {
 	const { producerKeypairBytes, seed, usdcAmount } = params;
-	console.log("Received params:", params);
 	try {
-		console.log(
-			"producerKeypairBytes.length:",
-			producerKeypairBytes.length
-		);
-		if (producerKeypairBytes.length !== 64) {
-			throw new Error("Invalid secret key size. Expected 64 bytes.");
-		}
-		const producerKeypair = Keypair.fromSecretKey(
-			Uint8Array.from(producerKeypairBytes)
-		);
-		console.log(
-			"Producer Keypair Public Key:",
-			producerKeypair.publicKey.toBase58()
-		);
+		const producerKeypair = Keypair.fromSecretKey(Uint8Array.from(producerKeypairBytes));
 		const producerPubKey = producerKeypair.publicKey;
-		console.log("Producer Public Key:", producerPubKey.toBase58());
+
 		const seedBN = new anchor.BN(seed);
-		console.log("Seed BN:", seedBN.toString());
 		const usdcAmountBN = new anchor.BN(usdcAmount);
-		console.log("USDC Amount BN:", usdcAmountBN.toString());
-		const [devoltEscrowPDA, _] = PublicKey.findProgramAddressSync(
-			[
-				Buffer.from("devolt"),
-				producerPubKey.toBuffer(),
-				seedBN.toArrayLike(Buffer, "le", 8),
-			],
+		const [devoltEscrowPDA] = PublicKey.findProgramAddressSync(
+			[Buffer.from("devolt"), producerPubKey.toBuffer(), seedBN.toArrayLike(Buffer, "le", 8)],
 			program.programId
 		);
-		console.log("Devolt Escrow PDA:", devoltEscrowPDA.toBase58());
-		await ensureSolBalance(producerKeypair, connection, 1);
-		await ensureSolBalance(devoltKeypair, connection, 1);
-		const { keypairUsdcAccount, devoltUsdcAccount, devoltVoltAccount } =
-			await initializeAccounts(
-				connection,
-				producerKeypair,
-				devoltKeypair,
-				usdcMint,
-				voltMint
-			);
-		const producerUsdcAccount = keypairUsdcAccount;
+
+		await ensureBalance('SOL', devoltKeypair, devoltKeypair.publicKey, 1);
+		const { devoltUsdcAccount, devoltVoltAccount } = await initializeAccounts(connection, producerKeypair, devoltKeypair, usdcMint, voltMint);
+
+		// const accounts = {
+        //     devolt: devoltKeypair.publicKey,
+        //     consumer: consumerPubKey,
+        //     usdcMint,
+        //     voltMint,
+        //     consumerUsdcAccount: keypairUsdcAccount,
+        //     devoltUsdcAccount,
+        //     devoltVoltAccount,
+        //     devoltEscrow: devoltEscrowPDA,
+        //     devoltEscrowUsdcAccount: devoltEscrowUsdcAccount.address,  // Ensure the address is passed
+        //     associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        //     tokenProgram: TOKEN_PROGRAM_ID,
+        //     systemProgram: SystemProgram.programId,
+        // };
 		const accounts = {
-			devolt: devoltKeypair.publicKey,
-			producer: producerPubKey,
-			usdcMint,
-			voltMint,
-			producerUsdcAccount,
+			...createSellAccountsSetup(producerPubKey, devoltEscrowPDA),
 			devoltUsdcAccount,
 			devoltVoltAccount,
 			devoltEscrow: devoltEscrowPDA,
-			associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-			tokenProgram: TOKEN_PROGRAM_ID,
-			systemProgram: SystemProgram.programId,
 		};
-		console.log("Accounts:", accounts);
-		const producerBalanceUSDC = await connection.getTokenAccountBalance(
-			producerUsdcAccount
-		);
-		console.log(
-			"Producer USDC Balance:",
-			producerBalanceUSDC.value.uiAmount
-		);
-		const requiredUsdcAmount = usdcAmountBN.toNumber();
-		if (
-			producerBalanceUSDC.value.uiAmount !== null &&
-			producerBalanceUSDC.value.uiAmount < requiredUsdcAmount
-		) {
-			const mintAmount =
-				requiredUsdcAmount - producerBalanceUSDC.value.uiAmount;
-			console.log(
-				`Minting ${mintAmount} USDC to Producer's USDC Account...`
-			);
-			await mintTo(
-				connection,
-				devoltKeypair,
-				usdcMint,
-				producerUsdcAccount,
-				devoltKeypair.publicKey,
-				mintAmount * 1_000_000 // Convert to smallest unit
-			);
-			console.log("Minted additional USDC.");
-		}
-		const tx = await program.methods
-			.sellEnergy(seedBN, usdcAmountBN)
-			.accounts(accounts)
-			.signers([producerKeypair, devoltKeypair])
-			.rpc();
-		console.log("Transaction ID:", tx);
 
-		// Log balances after successful transaction
+		await ensureBalance('USDC', devoltKeypair, devoltUsdcAccount, usdcAmount);
+		const tx = await program.methods.sellEnergy(seedBN, usdcAmountBN).accountsPartial(accounts).signers([producerKeypair, devoltKeypair]).rpc();
+
 		await logBalances(connection, producerPubKey, [usdcMint]);
-		await logBalances(connection, devoltKeypair.publicKey, [
-			usdcMint,
-			voltMint,
-		]);
+		await logBalances(connection, devoltKeypair.publicKey, [usdcMint, voltMint]);
 
-		return { transactionId: tx };
+		return { transactionId: tx, escrowPublicKey: devoltEscrowPDA.toBase58() };
 	} catch (error: any) {
-		if (error.logs) {
-			const specificLog = error.logs.find((log: string) =>
-				log.includes("Allocate: account Address")
-			);
-			if (specificLog) {
-				const address = specificLog.split(" ")[2];
-				console.log({
-					error: {
-						code: -32603,
-						message: `Account ${address} already exists`,
-					},
-				});
-				return {
-					error: {
-						code: -32603,
-						message: `Account ${address} already exists`,
-					},
-				};
-			}
-		}
-
-		console.error({
-			error: {
-				code: -32603,
-				message: error.message || "Internal error",
-			},
-		});
-		return {
-			error: {
-				code: -32603,
-				message: error.message || "Internal error",
-			},
-		};
+		return handleError(error);
 	}
 }
 
-export async function buyEnergy(params: {
-	consumerKeypairBytes: number[];
-	seed: number;
-	energyAmount: number;
-}): Promise<
-	{ transactionId: string } | { error: { code: number; message: string } }
-> {
-	const { consumerKeypairBytes, seed, energyAmount } = params;
-	console.log("Received params:", params);
-	try {
-		if (consumerKeypairBytes.length !== 64) {
-			throw new Error("Invalid secret key size. Expected 64 bytes.");
-		}
-		const consumerKeypair = Keypair.fromSecretKey(
-			Uint8Array.from(consumerKeypairBytes)
-		);
-		console.log(
-			"Consumer Keypair Public Key:",
-			consumerKeypair.publicKey.toBase58()
-		);
-		const consumerPubKey = consumerKeypair.publicKey;
-		const seedBN = new anchor.BN(seed);
-		const energyAmountBN = new anchor.BN(energyAmount);
-		const [devoltEscrowPDA, bump] = PublicKey.findProgramAddressSync(
-			[
-				Buffer.from("devolt"),
-				consumerPubKey.toBuffer(),
-				seedBN.toArrayLike(Buffer, "le", 8),
-			],
-			program.programId
-		);
-		console.log(
-			"Devolt Escrow PDA for buyEnergy:",
-			devoltEscrowPDA.toBase58()
-		);
-		// Garantir que o consumerKeypair e devoltKeypair possuem SOL suficiente
-		await ensureSolBalance(consumerKeypair, connection, 1);
-		await ensureSolBalance(devoltKeypair, connection, 1);
-		const { keypairUsdcAccount, devoltUsdcAccount, devoltVoltAccount } =
-			await initializeAccounts(
-				connection,
-				consumerKeypair,
-				devoltKeypair,
-				usdcMint,
-				voltMint
-			);
-		const consumerUsdcAccount = keypairUsdcAccount;
-		// Permitir Owner Off-Curve para a conta de escrow
-		const devoltEscrowUsdcAccount = await getOrCreateTokenAccountPDA(
-			connection,
-			devoltKeypair,
-			usdcMint,
-			devoltEscrowPDA
-		);
-		const accounts = {
-			devolt: devoltKeypair.publicKey,
-			consumer: consumerPubKey,
-			usdcMint,
-			voltMint,
-			consumerUsdcAccount,
-			devoltUsdcAccount,
-			devoltVoltAccount,
-			devoltEscrow: devoltEscrowPDA,
-			devoltEscrowUsdcAccount,
-			associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-			tokenProgram: TOKEN_PROGRAM_ID,
-			systemProgram: SystemProgram.programId,
-		};
-		console.log("Accounts for buyEnergy:", accounts);
-		const consumerBalanceUSDC = await connection.getTokenAccountBalance(
-			consumerUsdcAccount
-		);
-		console.log(
-			"Consumer USDC Balance:",
-			consumerBalanceUSDC.value.uiAmount
-		);
-		const requiredUsdcAmount = energyAmountBN.toNumber();
-		if (
-			consumerBalanceUSDC.value.uiAmount !== null &&
-			consumerBalanceUSDC.value.uiAmount < requiredUsdcAmount
-		) {
-			const mintAmount =
-				requiredUsdcAmount - consumerBalanceUSDC.value.uiAmount;
-			console.log(
-				`Minting ${mintAmount} USDC to Consumer's USDC Account...`
-			);
-			await mintTo(
-				connection,
-				devoltKeypair,
-				usdcMint,
-				consumerUsdcAccount,
-				devoltKeypair.publicKey,
-				mintAmount * 1_000_000 // Convert to smallest unit
-			);
-			console.log("Minted additional USDC.");
-		}
-		const tx = await program.methods
-			.buyEnergy(seedBN, energyAmountBN)
-			.accounts(accounts)
-			.signers([consumerKeypair, devoltKeypair])
-			.rpc();
-		console.log("Transaction ID for buyEnergy:", tx);
+export async function buyEnergy(params: { consumerKeypairBytes: number[]; seed: number; energyAmount: number }) {
+    const { consumerKeypairBytes, seed, energyAmount } = params;
+    try {
+        const consumerKeypair = Keypair.fromSecretKey(Uint8Array.from(consumerKeypairBytes));
+        const consumerPubKey = consumerKeypair.publicKey;
 
-		// Log balances after successful transaction
-		await logBalances(connection, consumerPubKey, [usdcMint]);
-		await logBalances(connection, devoltKeypair.publicKey, [
-			usdcMint,
-			voltMint,
-		]);
+        const seedBN = new anchor.BN(seed);
+        const energyAmountBN = new anchor.BN(energyAmount);
+        const [devoltEscrowPDA] = PublicKey.findProgramAddressSync(
+            [Buffer.from("devolt"), consumerPubKey.toBuffer(), seedBN.toArrayLike(Buffer, "le", 8)],
+            program.programId
+        );
 
-		return { transactionId: tx };
-	} catch (error: any) {
-		console.error("Error in buyEnergy:", error);
-		return {
-			error: {
-				code: -32603,
-				message: error.message || "Internal error",
-			},
-		};
-	}
+        // Garante que o saldo de SOL é suficiente
+        await ensureBalance('SOL', devoltKeypair, devoltKeypair.publicKey, 1);
+
+        // Inicializa as contas associadas
+        const { keypairUsdcAccount, devoltUsdcAccount, devoltVoltAccount } = await initializeAccounts(
+            connection,
+            consumerKeypair,
+            devoltKeypair,
+            usdcMint,
+            voltMint
+        );
+
+        // Cria ou recupera a conta de USDC associada ao PDA de escrow
+        const devoltEscrowUsdcAccount = await getOrCreateAssociatedTokenAccount(
+            connection,
+            devoltKeypair,
+            usdcMint,
+            devoltEscrowPDA,
+            true  // Allow off-curve for PDAs
+        );
+
+        const accounts = {
+            devolt: devoltKeypair.publicKey,
+            consumer: consumerPubKey,
+            usdcMint,
+            voltMint,
+            consumerUsdcAccount: keypairUsdcAccount,
+            devoltUsdcAccount,
+            devoltVoltAccount,
+            devoltEscrow: devoltEscrowPDA,
+            devoltEscrowUsdcAccount: devoltEscrowUsdcAccount.address,  // Ensure the address is passed
+            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            systemProgram: SystemProgram.programId,
+        };
+
+        console.log("Accounts setup for buyEnergy:", accounts);
+
+        // Garante que o saldo de USDC do consumidor é suficiente
+        // await ensureBalance('USDC', devoltKeypair, keypairUsdcAccount, energyAmount);
+
+        // Envia a transação para comprar energia
+        const tx = await program.methods.buyEnergy(seedBN, energyAmountBN).accounts(accounts).signers([consumerKeypair, devoltKeypair]).rpc();
+        console.log("Transaction ID for buyEnergy:", tx);
+
+        // Log das contas após a transação
+        await logBalances(connection, consumerPubKey, [usdcMint]);
+        await logBalances(connection, devoltKeypair.publicKey, [usdcMint, voltMint]);
+
+        return { transactionId: tx, escrowPublicKey: devoltEscrowPDA.toBase58() };
+    } catch (error: any) {
+        return handleError(error);
+    }
 }
 
 export async function confirmSelling(params: { escrowPublicKey: string }) {
@@ -378,6 +284,26 @@ export async function confirmSelling(params: { escrowPublicKey: string }) {
 			account.maker
 		);
 
+		// Verificar e garantir que a DeVolt tenha saldo suficiente de USDC
+		const devoltUsdcBalance = await connection.getTokenAccountBalance(devoltUsdcAccount);
+		const requiredUsdcAmount = account.usdc.toNumber();
+
+		if (devoltUsdcBalance.value.uiAmount !== null && devoltUsdcBalance.value.uiAmount < requiredUsdcAmount) {
+			const mintAmount = requiredUsdcAmount - devoltUsdcBalance.value.uiAmount;
+			if (typeof(mintAmount) == "number") {
+				console.log(`Minting ${mintAmount} USDC to DeVolt's USDC Account...`);
+				await mintTo(
+					connection,
+					devoltKeypair,
+					usdcMint,
+					devoltUsdcAccount,
+					devoltKeypair.publicKey,
+					mintAmount // * 1_000_000 // Convertendo para a menor unidade
+				);
+				console.log("Minted additional USDC.");
+			}
+		}
+
 		const accounts = {
 			devoltEscrow: escrowPubKey,
 			devolt: devoltKeypair.publicKey,
@@ -401,10 +327,7 @@ export async function confirmSelling(params: { escrowPublicKey: string }) {
 
 		// Log balances after successful transaction
 		await logBalances(connection, account.maker, [usdcMint]);
-		await logBalances(connection, devoltKeypair.publicKey, [
-			usdcMint,
-			voltMint,
-		]);
+		await logBalances(connection, devoltKeypair.publicKey, [usdcMint, voltMint]);
 
 		return { transactionId: tx };
 	} catch (error: any) {
@@ -417,6 +340,7 @@ export async function confirmSelling(params: { escrowPublicKey: string }) {
 		};
 	}
 }
+
 
 export async function confirmBuying(params: { escrowPublicKey: string }) {
 	const { escrowPublicKey } = params;
@@ -456,6 +380,26 @@ export async function confirmBuying(params: { escrowPublicKey: string }) {
 			true
 		);
 
+		// Verificar e garantir que a DeVolt tenha saldo suficiente de USDC
+		const devoltUsdcBalance = await connection.getTokenAccountBalance(devoltUsdcAccount);
+		const requiredUsdcAmount = account.usdc.toNumber();
+
+		if (devoltUsdcBalance.value.uiAmount !== null && devoltUsdcBalance.value.uiAmount < requiredUsdcAmount) {
+			const mintAmount = requiredUsdcAmount - devoltUsdcBalance.value.uiAmount;
+			if (typeof(mintAmount)=="number") {
+				console.log(`Minting ${mintAmount} USDC to DeVolt's USDC Account...`);
+			await mintTo(
+				connection,
+				devoltKeypair,
+				usdcMint,
+				devoltUsdcAccount,
+				devoltKeypair.publicKey,
+				mintAmount // * 1_000_000 // Convertendo para a menor unidade
+			);
+			console.log("Minted additional USDC.");
+			}	
+		}
+
 		const accounts = {
 			devoltEscrow: escrowPubKey,
 			devolt: devoltKeypair.publicKey,
@@ -478,12 +422,9 @@ export async function confirmBuying(params: { escrowPublicKey: string }) {
 			.rpc();
 		console.log("Transaction ID for confirmBuying:", tx);
 
-		// Log balances after successful transaction
+		// Log balances após a transação
 		await logBalances(connection, account.maker, [usdcMint]);
-		await logBalances(connection, devoltKeypair.publicKey, [
-			usdcMint,
-			voltMint,
-		]);
+		await logBalances(connection, devoltKeypair.publicKey, [usdcMint, voltMint]);
 
 		return { transactionId: tx };
 	} catch (error: any) {
@@ -494,29 +435,5 @@ export async function confirmBuying(params: { escrowPublicKey: string }) {
 				message: error.message || "Internal error",
 			},
 		};
-	}
-}
-
-async function ensureSolBalance(
-	keypair: Keypair,
-	connection: anchor.web3.Connection,
-	minimumSol: number = 1
-) {
-	const balance = await connection.getBalance(keypair.publicKey);
-	console.log(
-		`Current SOL balance for ${keypair.publicKey.toBase58()}: ${
-			balance / anchor.web3.LAMPORTS_PER_SOL
-		} SOL`
-	);
-	if (balance < minimumSol * anchor.web3.LAMPORTS_PER_SOL) {
-		console.log(
-			`Airdropping ${minimumSol} SOL to ${keypair.publicKey.toBase58()}`
-		);
-		const airdropSignature = await connection.requestAirdrop(
-			keypair.publicKey,
-			minimumSol * anchor.web3.LAMPORTS_PER_SOL
-		);
-		await connection.confirmTransaction(airdropSignature, "confirmed");
-		console.log(`Airdrop complete for ${keypair.publicKey.toBase58()}`);
 	}
 }

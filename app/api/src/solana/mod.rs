@@ -95,7 +95,7 @@ impl PaymentEngineService {
         let response = self
             .client
             .post(&self.url)
-            .timeout(Duration::from_secs(120))
+            .timeout(Duration::from_secs(12000))
             .json(&payload)
             .send()
             .await
@@ -168,7 +168,7 @@ impl PaymentEngineService {
         let response = self
             .client
             .post(&self.url)
-            .timeout(Duration::from_secs(120))
+            .timeout(Duration::from_secs(12000))
             .json(&payload)
             .send()
             .await
@@ -242,7 +242,7 @@ impl PaymentEngineService {
         let response = self
             .client
             .post(&self.url)
-            .timeout(Duration::from_secs(120))
+            .timeout(Duration::from_secs(12000))
             .json(&request_payload)
             .send()
             .await
@@ -316,7 +316,7 @@ impl PaymentEngineService {
         let response = self
             .client
             .post(&self.url)
-            .timeout(Duration::from_secs(120))
+            .timeout(Duration::from_secs(12000))
             .json(&request_payload)
             .send()
             .await
