@@ -80,53 +80,53 @@ async fn check_for_confirmations(
             processing_transactions_guard.insert(pubkey_string.clone());
             drop(processing_transactions_guard);
 
-            match account.transaction {
-                payment_engine::TransactionType::Buy => {
-                    println!("Confirmation needed for buying escrow: {:?}", pubkey);
-                    let cloned_url = url.clone();
-                    let processing_transactions_clone = processing_transactions.clone();
-                    task::spawn(async move {
-                        let pes = PaymentEngineService::new(&cloned_url);
-                        let response = pes.confirm_buying(pubkey_string.clone()).await;
+            // match account.transaction {
+                // payment_engine::TransactionType::Buy => {
+                //     println!("Confirmation needed for buying escrow: {:?}", pubkey);
+                //     let cloned_url = url.clone();
+                //     let processing_transactions_clone = processing_transactions.clone();
+                //     task::spawn(async move {
+                //         let pes = PaymentEngineService::new(&cloned_url);
+                //         let response = pes.confirm_buying(pubkey_string.clone()).await;
 
-                        match response {
-                            Ok(signature) => {
-                                println!("Confirmed buying: {:?}", signature);
-                            }
-                            Err(e) => {
-                                eprintln!("Failed to confirm buying: {:?}", e);
-                            }
-                        }
+                //         match response {
+                //             Ok(signature) => {
+                //                 println!("Confirmed buying: {:?}", signature);
+                //             }
+                //             Err(e) => {
+                //                 eprintln!("Failed to confirm buying: {:?}", e);
+                //             }
+                //         }
 
-                        let mut processing_transactions_guard =
-                            processing_transactions_clone.lock().unwrap();
-                        processing_transactions_guard.remove(&pubkey_string);
-                    });
-                }
-                // payment_engine::TransactionType::Sell => {}
-                payment_engine::TransactionType::Sell => {
-                    println!("Confirmation needed for selling escrow: {:?}", pubkey);
-                    let cloned_url = url.clone();
-                    let processing_transactions_clone = processing_transactions.clone();
-                    task::spawn(async move {
-                        let pes = PaymentEngineService::new(&cloned_url);
-                        let response = pes.confirm_selling(pubkey_string.clone()).await;
+                //         let mut processing_transactions_guard =
+                //             processing_transactions_clone.lock().unwrap();
+                //         processing_transactions_guard.remove(&pubkey_string);
+                //     });
+                // }
+                // // payment_engine::TransactionType::Sell => {}
+                // payment_engine::TransactionType::Sell => {
+                //     println!("Confirmation needed for selling escrow: {:?}", pubkey);
+                //     let cloned_url = url.clone();
+                //     let processing_transactions_clone = processing_transactions.clone();
+                //     task::spawn(async move {
+                //         let pes = PaymentEngineService::new(&cloned_url);
+                //         let response = pes.confirm_selling(pubkey_string.clone()).await;
 
-                        match response {
-                            Ok(signature) => {
-                                println!("Confirmed selling: {:?}", signature);
-                            }
-                            Err(e) => {
-                                eprintln!("Failed to confirm selling: {:?}", e);
-                            }
-                        }
+                //         match response {
+                //             Ok(signature) => {
+                //                 println!("Confirmed selling: {:?}", signature);
+                //             }
+                //             Err(e) => {
+                //                 eprintln!("Failed to confirm selling: {:?}", e);
+                //             }
+                //         }
 
-                        let mut processing_transactions_guard =
-                            processing_transactions_clone.lock().unwrap();
-                        processing_transactions_guard.remove(&pubkey_string);
-                    });
-                }
-            }
+                //         let mut processing_transactions_guard =
+                //             processing_transactions_clone.lock().unwrap();
+                //         processing_transactions_guard.remove(&pubkey_string);
+                //     });
+                // }
+            // }
         }
     }
     true
