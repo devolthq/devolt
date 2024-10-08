@@ -15,8 +15,6 @@ spl-token create-token --decimals 6 --mint-authority admDPuh7ALjfpNr7pupdL7KE7ZC
 solana airdrop 5 con9L1bjbUHHJiLLBbzBwWXmyerS54Hw5kEhvf4YkQS
 solana airdrop 5 prozjgfrKQP59jGSXJkNKNSVFKCZNnS7FRqAt7dnvpA
 
-anchor deploy --provider.cluster localnet
-
 # Then:
 # light test-validator
-# solana-teste-validator
+# anchor deploy --provider.cluster localnet
