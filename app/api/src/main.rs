@@ -18,7 +18,7 @@ async fn main() {
 
     let app_state = Arc::new(AppState::new().await);
 
-    cronjob::run(Arc::clone(&app_state));
+    // cronjob::run(Arc::clone(&app_state));
 
     let app = Router::new()
         .nest("/user", user_router(Arc::clone(&app_state)))

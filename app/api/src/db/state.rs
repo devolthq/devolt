@@ -7,6 +7,8 @@ use sha2::Sha256;
 use sqlx::{sqlite::SqlitePoolOptions, SqlitePool};
 use std::time::Duration;
 
+use crate::models::User;
+
 type HmacSha256 = Hmac<Sha256>;
 
 pub struct JwtSecret {
@@ -57,11 +59,19 @@ impl AppState {
         let db_pool = SqlitePoolOptions::new()
             .max_connections(5)
             .acquire_timeout(Duration::from_secs(3))
-            .connect("sqlite://my_database.db") // .connect("sqlite::memory:")
+            .connect("sqlite://my_database.db")
             .await
             .expect("Failed to connect to SQLite");
 
         create_table(&db_pool).await;
+
+        let users = sqlx::query_as::<_, User>("SELECT * FROM users")
+            .fetch_all(&db_pool)
+            .await
+            .expect("Failed to fetch users");
+        for user in users {
+            println!("{:?}", user.public_key);
+        }
 
         AppState {
             db_pool,
@@ -91,40 +101,45 @@ async fn create_table(pool: &SqlitePool) {
     .await
     .expect("Failed to create users table");
 
-    // Parse the producer private key from the environment variable as a Vec<u8>
     let producer_keypair_bytes: Vec<u8> = std::env::var("PRODUCER_KEYPAIR_BYTES")
         .expect("PRODUCER_KEYPAIR_BYTES is not set")
         .trim_matches(|c| c == '[' || c == ']')
         .split(',')
-        .map(|s| s.trim().parse().expect("Invalid byte in PRODUCER_KEYPAIR_BYTES"))
+        .map(|s| {
+            s.trim()
+                .parse()
+                .expect("Invalid byte in PRODUCER_KEYPAIR_BYTES")
+        })
         .collect();
 
-    // Parse the consumer private key from the environment variable as a Vec<u8>
     let consumer_keypair_bytes: Vec<u8> = std::env::var("CONSUMER_KEYPAIR_BYTES")
         .expect("CONSUMER_KEYPAIR_BYTES is not set")
         .trim_matches(|c| c == '[' || c == ']')
         .split(',')
-        .map(|s| s.trim().parse().expect("Invalid byte in CONSUMER_KEYPAIR_BYTES"))
+        .map(|s| {
+            s.trim()
+                .parse()
+                .expect("Invalid byte in CONSUMER_KEYPAIR_BYTES")
+        })
         .collect();
 
-    // Create Keypairs from the byte vectors
-    let producer_keypair = Keypair::from_bytes(&producer_keypair_bytes)
-        .expect("Failed to create producer Keypair");
-    let consumer_keypair = Keypair::from_bytes(&consumer_keypair_bytes)
-        .expect("Failed to create consumer Keypair");
+    let producer_keypair =
+        Keypair::from_bytes(&producer_keypair_bytes).expect("Failed to create producer Keypair");
+    let consumer_keypair =
+        Keypair::from_bytes(&consumer_keypair_bytes).expect("Failed to create consumer Keypair");
 
     let users = vec![
         (
             "Matheus Macedo Santos",
             "matheus@email.com",
             "password",
-            producer_keypair, // producer keypair for Matheus
+            consumer_keypair,
         ),
         (
             "Marcelo Gomes Feitoza",
             "marcelo@email.com",
             "password",
-            consumer_keypair, // consumer keypair for Marcelo
+            producer_keypair,
         ),
     ];
 

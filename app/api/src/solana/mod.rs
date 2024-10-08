@@ -223,17 +223,17 @@ impl PaymentEngineService {
         }
     }
 
-    pub async fn confirm_buying(
+    pub async fn confirm_selling(
         &self,
         escrow_public_key: String,
     ) -> Result<Signature, ErrorResponse> {
-        let payload = ConfirmBuyingPayload {
+        let payload = ConfirmSellingPayload {
             escrowPublicKey: escrow_public_key,
         };
 
         let request_payload = Payload {
             jsonrpc: "2.0".to_string(),
-            method: "confirm_buying".to_string(),
+            method: "confirm_selling".to_string(),
             params: serde_json::to_value(payload).map_err(|e| {
                 eprintln!("Error serializing payload: {}", e);
                 ErrorResponse {
@@ -247,7 +247,7 @@ impl PaymentEngineService {
         let response = self
             .client
             .post(&self.url)
-            .timeout(Duration::from_secs(120))
+            .timeout(Duration::from_secs(12000))
             .json(&request_payload)
             .send()
             .await
@@ -304,79 +304,6 @@ impl PaymentEngineService {
         }
     }
 
-    pub async fn confirm_selling(
-        &self,
-        escrow_public_key: String,
-    ) -> Result<Signature, ErrorResponse> {
-        let payload = ConfirmSellingPayload {
-            escrowPublicKey: escrow_public_key,
-        };
-
-        let request_payload = Payload {
-            jsonrpc: "2.0".to_string(),
-            method: "confirm_selling".to_string(),
-            params: serde_json::to_value(payload).map_err(|e| {
-                eprintln!("Error serializing payload: {}", e);
-                ErrorResponse {
-                    status_code: 500,
-                    error: "Failed to serialize request payload".to_string(),
-                }
-            })?,
-            id: 1,
-        };
-
-        let response = self
-            .client
-            .post(&self.url)
-            .timeout(Duration::from_secs(12000))
-            .json(&request_payload)
-            .send()
-            .await
-            .map_err(|e| {
-                eprintln!("Error sending request: {}", e);
-                ErrorResponse {
-                    status_code: 500,
-                    error: "Failed to send request to payment engine".to_string(),
-                }
-            })?;
-
-        println!("Received response status: {}", response.status());
-
-        let response_json: ApiResponse = response.json().await.map_err(|e| {
-            eprintln!("Error parsing response: {}", e);
-            ErrorResponse {
-                status_code: 500,
-                error: "Failed to parse response from payment engine".to_string(),
-            }
-        })?;
-
-        if let Some(result) = response_json.result {
-            if result.escrowPublicKey.is_empty() {
-                eprintln!("Missing escrowPublicKey in response");
-                return Err(ErrorResponse {
-                    status_code: 500,
-                    error: "Failed to parse transaction signature".to_string(),
-                }
-            })
-        } else if let Some(error) = response_json.error {
-            let error_message = error
-                .get("message")
-                .and_then(|v| v.as_str())
-                .unwrap_or("Unknown error");
-            eprintln!("Error from payment engine: {}", error_message);
-            Err(ErrorResponse {
-                status_code: 500,
-                error: "Payment engine returned an error".to_string(),
-            })
-        } else {
-            eprintln!("Invalid response from server");
-            Err(ErrorResponse {
-                status_code: 500,
-                error: "Invalid response from payment engine".to_string(),
-            })
-        }
-    }
-
     pub async fn confirm_buying(
         &self,
         escrow_public_key: String,
@@ -421,6 +348,9 @@ impl PaymentEngineService {
                 status_code: 500,
                 error: "Failed to parse response from payment engine".to_string(),
             }
+        })?;
+
+        if let Some(result) = response_json.result {
             let transaction_id = result.transactionId;
             Signature::from_str(&transaction_id).map_err(|e| {
                 eprintln!("Error parsing signature: {}", e);
