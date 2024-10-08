@@ -1,5 +1,11 @@
 import * as anchor from "@coral-xyz/anchor";
-import { Connection, Keypair, PublicKey, sendAndConfirmTransaction, Transaction } from "@solana/web3.js";
+import {
+	Connection,
+	Keypair,
+	PublicKey,
+	sendAndConfirmTransaction,
+	Transaction,
+} from "@solana/web3.js";
 import {
 	ASSOCIATED_TOKEN_PROGRAM_ID,
 	getOrCreateAssociatedTokenAccount,
@@ -16,13 +22,19 @@ const accountCache: {
 		[mint: string]: PublicKey;
 	};
 } = {
-	"prozjgfrKQP59jGSXJkNKNSVFKCZNnS7FRqAt7dnvpA": {
-		"6tUsS6DoCVNgo6eyfChcg2MLHds5HnqoH7NYo6JMXSB9": new PublicKey("GFZouUVacbJDiY5AWugTo6umJYxcs67t9mynsRwZk6En"),
+	prozjgfrKQP59jGSXJkNKNSVFKCZNnS7FRqAt7dnvpA: {
+		"6tUsS6DoCVNgo6eyfChcg2MLHds5HnqoH7NYo6JMXSB9": new PublicKey(
+			"GFZouUVacbJDiY5AWugTo6umJYxcs67t9mynsRwZk6En"
+		),
 	},
-	"admDPuh7ALjfpNr7pupdL7KE7ZCwW8iRuExWFrvZZkX": {
-		"6tUsS6DoCVNgo6eyfChcg2MLHds5HnqoH7NYo6JMXSB9": new PublicKey("9jWU3om63MQTQagBxwGWvkABcZjt4MjiURsuKdCcaLif"),
-		"GG41daTaQcELJcfGDaVRsFVjZ6W6Wb5WEqCNH4RAgcPP": new PublicKey("2EupzBSBe22CA3oPGr7SC7o9GXDkAN3ia7sHw5sZrcrV"),
-	}
+	admDPuh7ALjfpNr7pupdL7KE7ZCwW8iRuExWFrvZZkX: {
+		"6tUsS6DoCVNgo6eyfChcg2MLHds5HnqoH7NYo6JMXSB9": new PublicKey(
+			"9jWU3om63MQTQagBxwGWvkABcZjt4MjiURsuKdCcaLif"
+		),
+		GG41daTaQcELJcfGDaVRsFVjZ6W6Wb5WEqCNH4RAgcPP: new PublicKey(
+			"2EupzBSBe22CA3oPGr7SC7o9GXDkAN3ia7sHw5sZrcrV"
+		),
+	},
 };
 
 export async function getOrCreateTokenAccount(
@@ -36,11 +48,15 @@ export async function getOrCreateTokenAccount(
 	const mintKey = mint.toBase58();
 
 	if (accountCache[ownerKey] && accountCache[ownerKey][mintKey]) {
-		console.log(`Returning cached token account for ${ownerKey} with mint ${mintKey}`);
+		console.log(
+			`Returning cached token account for ${ownerKey} with mint ${mintKey}`
+		);
 		return accountCache[ownerKey][mintKey];
 	}
 
-	console.log(`Creating or retrieving token account for ${ownerKey} with mint ${mintKey}`);
+	console.log(
+		`Creating or retrieving token account for ${ownerKey} with mint ${mintKey}`
+	);
 	try {
 		const tokenAccount = await getOrCreateAssociatedTokenAccount(
 			connection,
@@ -49,7 +65,9 @@ export async function getOrCreateTokenAccount(
 			owner,
 			allowOwnerOffCurve
 		);
-		console.log(`Successfully created or retrieved token account: ${tokenAccount.address.toBase58()}`);
+		console.log(
+			`Successfully created or retrieved token account: ${tokenAccount.address.toBase58()}`
+		);
 
 		// Armazena no cache
 		if (!accountCache[ownerKey]) {
@@ -59,7 +77,9 @@ export async function getOrCreateTokenAccount(
 
 		return tokenAccount.address;
 	} catch (error: any) {
-		console.error(`Failed to create or retrieve token account for ${ownerKey} with mint ${mintKey}: ${error.message}`);
+		console.error(
+			`Failed to create or retrieve token account for ${ownerKey} with mint ${mintKey}: ${error.message}`
+		);
 		throw error;
 	}
 }
@@ -71,7 +91,13 @@ export async function getOrCreateTokenAccountPDA(
 	owner: PublicKey,
 	allowOwnerOffCurve: boolean = false
 ): Promise<PublicKey> {
-	return getOrCreateTokenAccount(connection, payer, mint, owner, allowOwnerOffCurve);
+	return getOrCreateTokenAccount(
+		connection,
+		payer,
+		mint,
+		owner,
+		allowOwnerOffCurve
+	);
 }
 
 export async function initializeAccounts(
@@ -137,7 +163,9 @@ export async function ensureDevoltUsdcBalance(
 		const mintAmountScaled = Math.floor(mintAmount * tokenScale);
 
 		if (mintAmountScaled > 0) {
-			console.log(`Minting ${mintAmount} USDC (${mintAmountScaled} micro USDC) to DeVolt's USDC Account...`);
+			console.log(
+				`Minting ${mintAmount} USDC (${mintAmountScaled} micro USDC) to DeVolt's USDC Account...`
+			);
 
 			await mintTo(
 				connection,
@@ -171,11 +199,15 @@ export async function retryGetOrCreateTokenAccount(
 				owner,
 				allowOwnerOffCurve
 			);
-			console.log(`Successfully created or retrieved token account: ${tokenAccount.address.toBase58()}`);
+			console.log(
+				`Successfully created or retrieved token account: ${tokenAccount.address.toBase58()}`
+			);
 			return tokenAccount.address;
 		} catch (error: any) {
 			attempts++;
-			console.error(`Failed attempt ${attempts} to create/retrieve token account: ${error.message}`);
+			console.error(
+				`Failed attempt ${attempts} to create/retrieve token account: ${error.message}`
+			);
 			if (attempts < retries) {
 				console.log(`Retrying in ${delay / 1000} seconds...`);
 				await new Promise((resolve) => setTimeout(resolve, delay));
@@ -184,7 +216,9 @@ export async function retryGetOrCreateTokenAccount(
 			}
 		}
 	}
-	throw new Error(`Failed to create/retrieve token account after ${retries} attempts`);
+	throw new Error(
+		`Failed to create/retrieve token account after ${retries} attempts`
+	);
 }
 
 export async function compressAccounts(connection: Connection, payer: Keypair) {
@@ -197,7 +231,10 @@ export async function compressAccounts(connection: Connection, payer: Keypair) {
 	});
 	console.log("Compress instruction created:", compressInstruction);
 
-	console.log("Compress Instruction Program ID:", compressInstruction.programId.toBase58());
+	console.log(
+		"Compress Instruction Program ID:",
+		compressInstruction.programId.toBase58()
+	);
 
 	console.log("Building compress transaction...");
 	const transaction = new Transaction().add(compressInstruction);

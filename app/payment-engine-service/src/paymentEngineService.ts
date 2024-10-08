@@ -14,6 +14,8 @@ import {
 	getOrCreateTokenAccount,
 	initializeAccounts,
 	retryGetOrCreateTokenAccount,
+	compressAccounts,
+	getOrCreateTokenAccountPDA,
 } from "./utils/accounts";
 
 dotenv.config();
@@ -54,6 +56,28 @@ const program = new anchor.Program<PaymentEngine>(
 	provider
 );
 
+async function logBalances(
+	connection: anchor.web3.Connection,
+	pubkey: PublicKey,
+	mints: PublicKey[]
+) {
+	for (const mint of mints) {
+		const tokenAccount = await getOrCreateAssociatedTokenAccount(
+			connection,
+			devoltKeypair,
+			mint,
+			pubkey
+		);
+		const balance = await connection.getTokenAccountBalance(
+			tokenAccount.address
+		);
+		console.log(
+			`${pubkey.toBase58()} Balance for ${mint.toBase58()}:`,
+			balance.value.uiAmount
+		);
+	}
+}
+
 async function ensureSolBalance(
 	keypair: Keypair,
 	connection: anchor.web3.Connection,
@@ -75,6 +99,25 @@ async function ensureSolBalance(
 		);
 		await connection.confirmTransaction(airdropSignature, "confirmed");
 		console.log(`Airdrop complete for ${keypair.publicKey.toBase58()}`);
+	}
+}
+
+async function ensureBalance(
+	type: "SOL" | "USDC",
+	keypair: Keypair,
+	account: PublicKey,
+	requiredAmount: number
+) {
+	if (type === "SOL") {
+		await ensureSolBalance(keypair, connection, requiredAmount);
+	} else if (type === "USDC") {
+		await ensureDevoltUsdcBalance(
+			connection,
+			devoltKeypair,
+			account,
+			usdcMint,
+			requiredAmount
+		);
 	}
 }
 
@@ -108,47 +151,6 @@ function createSellAccountsSetup(
 	};
 }
 
-async function logBalances(
-	connection: anchor.web3.Connection,
-	pubkey: PublicKey,
-	mints: PublicKey[]
-) {
-	for (const mint of mints) {
-		const tokenAccount = await getOrCreateAssociatedTokenAccount(
-			connection,
-			devoltKeypair,
-			mint,
-			pubkey
-		);
-		const balance = await connection.getTokenAccountBalance(
-			tokenAccount.address
-		);
-		console.log(
-			`${pubkey.toBase58()} Balance for ${mint.toBase58()}:`,
-			balance.value.uiAmount
-		);
-	}
-}
-
-async function ensureBalance(
-	type: "SOL" | "USDC",
-	keypair: Keypair,
-	account: PublicKey,
-	requiredAmount: number
-) {
-	if (type === "SOL") {
-		await ensureSolBalance(keypair, connection, requiredAmount);
-	} else if (type === "USDC") {
-		await ensureDevoltUsdcBalance(
-			connection,
-			devoltKeypair,
-			account,
-			usdcMint,
-			requiredAmount
-		);
-	}
-}
-
 function handleError(error: any) {
 	console.error("Error:", error.message || "Internal error");
 	if (error.logs) {
@@ -177,14 +179,34 @@ export async function sellEnergy(params: {
 	usdcAmount: number;
 }) {
 	const { producerKeypairBytes, seed, usdcAmount } = params;
+	console.log("Received params:", params);
 	try {
+		console.log(
+			"producerKeypairBytes.length:",
+			producerKeypairBytes.length
+		);
+		if (producerKeypairBytes.length !== 64) {
+			throw new Error("Invalid secret key size. Expected 64 bytes.");
+		}
 		const producerKeypair = Keypair.fromSecretKey(
 			Uint8Array.from(producerKeypairBytes)
 		);
+		console.log(
+			"Producer Keypair Public Key:",
+			producerKeypair.publicKey.toBase58()
+		);
 		const producerPubKey = producerKeypair.publicKey;
-
+		console.log("Producer Public Key:", producerPubKey.toBase58());
 		const seedBN = new anchor.BN(seed);
+		console.log("Seed BN:", seedBN.toString());
 		const usdcAmountBN = new anchor.BN(usdcAmount);
+		console.log("USDC Amount BN:", usdcAmountBN.toString());
+
+		// Chamada para compressAccounts antes de qualquer operação
+		console.log("Compressing accounts...");
+		await compressAccounts(connection, devoltKeypair);
+		console.log("Compression complete.");
+
 		const [devoltEscrowPDA] = PublicKey.findProgramAddressSync(
 			[
 				Buffer.from("devolt"),
@@ -193,8 +215,12 @@ export async function sellEnergy(params: {
 			],
 			program.programId
 		);
+		console.log("Devolt Escrow PDA:", devoltEscrowPDA.toBase58());
 
 		await ensureBalance("SOL", devoltKeypair, devoltKeypair.publicKey, 1);
+		await ensureBalance("SOL", producerKeypair, producerPubKey, 1);
+
+		console.log("Initializing accounts...");
 		const { devoltUsdcAccount, devoltVoltAccount } =
 			await initializeAccounts(
 				connection,
@@ -203,13 +229,13 @@ export async function sellEnergy(params: {
 				usdcMint,
 				voltMint
 			);
-
 		const accounts = {
 			...createSellAccountsSetup(producerPubKey, devoltEscrowPDA),
 			devoltUsdcAccount,
 			devoltVoltAccount,
 			devoltEscrow: devoltEscrowPDA,
 		};
+		console.log("Accounts:", accounts);
 
 		await ensureBalance(
 			"USDC",
@@ -222,6 +248,7 @@ export async function sellEnergy(params: {
 			.accountsPartial(accounts)
 			.signers([producerKeypair, devoltKeypair])
 			.rpc();
+		console.log("Transaction ID:", tx);
 
 		await logBalances(connection, producerPubKey, [usdcMint]);
 		await logBalances(connection, devoltKeypair.publicKey, [
@@ -230,8 +257,8 @@ export async function sellEnergy(params: {
 		]);
 
 		return {
-			transactionId: tx,
-			escrowPublicKey: devoltEscrowPDA.toBase58(),
+			transaction_id: tx,
+			escrow_public_key: devoltEscrowPDA.toBase58(),
 		};
 	} catch (error: any) {
 		return handleError(error);
@@ -242,13 +269,18 @@ export async function buyEnergy(params: {
 	consumerKeypairBytes: number[];
 	seed: number;
 	energyAmount: number;
-}) {
+}): Promise<
+	| { transaction_id: string; escrow_public_key: string }
+	| { error: { code: number; message: string } }
+> {
 	const { consumerKeypairBytes, seed, energyAmount } = params;
+	console.log("Received params:", params);
 	try {
 		const consumerKeypair = Keypair.fromSecretKey(
 			Uint8Array.from(consumerKeypairBytes)
 		);
 		const consumerPubKey = consumerKeypair.publicKey;
+		console.log("Consumer Keypair Public Key:", consumerPubKey.toBase58());
 
 		const seedBN = new anchor.BN(seed);
 		const energyAmountBN = new anchor.BN(energyAmount);
@@ -260,10 +292,16 @@ export async function buyEnergy(params: {
 			],
 			program.programId
 		);
+		console.log("Devolt Escrow PDA:", devoltEscrowPDA.toBase58());
+
+		// Chamada para compressAccounts antes de qualquer operação
+		console.log("Compressing accounts...");
+		await compressAccounts(connection, devoltKeypair);
+		console.log("Compression complete.");
 
 		await ensureBalance("SOL", devoltKeypair, devoltKeypair.publicKey, 1);
 
-		const { keypairUsdcAccount, devoltUsdcAccount, devoltVoltAccount } =
+		const { devoltUsdcAccount, devoltVoltAccount } =
 			await initializeAccounts(
 				connection,
 				consumerKeypair,
@@ -271,13 +309,25 @@ export async function buyEnergy(params: {
 				usdcMint,
 				voltMint
 			);
+		const consumerUsdcAccount = await getOrCreateTokenAccount(
+			connection,
+			devoltKeypair,
+			usdcMint,
+			consumerKeypair.publicKey,
+			false
+		);
+		console.log("Consumer USDC Account:", consumerUsdcAccount.toBase58());
 
-		const devoltEscrowUsdcAccount = await getOrCreateAssociatedTokenAccount(
+		const devoltEscrowUsdcAccount = await getOrCreateTokenAccountPDA(
 			connection,
 			devoltKeypair,
 			usdcMint,
 			devoltEscrowPDA,
 			true
+		);
+		console.log(
+			"Devolt Escrow USDC Account:",
+			devoltEscrowUsdcAccount.toBase58()
 		);
 
 		const accounts = {
@@ -285,19 +335,24 @@ export async function buyEnergy(params: {
 			consumer: consumerPubKey,
 			usdcMint,
 			voltMint,
-			consumerUsdcAccount: keypairUsdcAccount,
+			consumerUsdcAccount,
 			devoltUsdcAccount,
 			devoltVoltAccount,
 			devoltEscrow: devoltEscrowPDA,
-			devoltEscrowUsdcAccount: devoltEscrowUsdcAccount.address,
+			devoltEscrowUsdcAccount,
 			associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
 			tokenProgram: TOKEN_PROGRAM_ID,
 			systemProgram: SystemProgram.programId,
 		};
+		console.log("Accounts for buyEnergy:", accounts);
 
-		console.log("Accounts setup for buyEnergy:", accounts);
-
-		await ensureBalance('USDC', devoltKeypair, keypairUsdcAccount, energyAmount);
+		// Garantir que a conta de USDC do consumidor tenha saldo suficiente
+		await ensureBalance(
+			"USDC",
+			devoltKeypair,
+			consumerUsdcAccount,
+			energyAmount
+		);
 
 		const tx = await program.methods
 			.buyEnergy(seedBN, energyAmountBN)
@@ -313,8 +368,8 @@ export async function buyEnergy(params: {
 		]);
 
 		return {
-			transactionId: tx,
-			escrowPublicKey: devoltEscrowPDA.toBase58(),
+			transaction_id: tx,
+			escrow_public_key: devoltEscrowPDA.toBase58(),
 		};
 	} catch (error: any) {
 		return handleError(error);
@@ -323,80 +378,53 @@ export async function buyEnergy(params: {
 
 export async function confirmSelling(params: { escrowPublicKey: string }) {
 	const { escrowPublicKey } = params;
+	console.log("confirmSelling called with params:", params);
 
 	try {
 		const escrowPubKey = new PublicKey(escrowPublicKey);
+		console.log("Escrow Public Key:", escrowPubKey.toBase58());
 
-		const account = (await program.account.deVoltEscrow.fetch(
-			escrowPubKey
-		)) as {
-			seed: anchor.BN;
-			bump: number;
-			maker: PublicKey;
-			devolt: PublicKey;
-			makerUsdcAccount: PublicKey;
-			devoltUsdcAccount: PublicKey;
-			devoltVoltAccount: PublicKey;
-			usdcMint: PublicKey;
-			voltMint: PublicKey;
-			volts: anchor.BN;
-			usdc: anchor.BN;
-			transaction: { sell?: {}; buy?: {} };
-			state: { confirmed?: {}; pending?: {}; refunded?: {} };
-		};
+		console.log("Compressing accounts...");
+		await compressAccounts(connection, devoltKeypair);
+		console.log("Compression complete.");
+
+		const account = await program.account.deVoltEscrow.fetch(escrowPubKey);
 		console.log("Fetched escrow account for confirmSelling:", account);
-		if (account.state.confirmed) {
-			console.log("Transaction already confirmed.");
-			return { transactionId: null };
-		}
 
+		console.log("Creating or retrieving Devolt USDC Account...");
 		const devoltUsdcAccount = await getOrCreateTokenAccount(
 			connection,
 			devoltKeypair,
 			usdcMint,
 			devoltKeypair.publicKey
 		);
+		console.log("Devolt USDC Account:", devoltUsdcAccount.toBase58());
 
+		console.log("Creating or retrieving Devolt VOLT Account...");
 		const devoltVoltAccount = await getOrCreateTokenAccount(
 			connection,
 			devoltKeypair,
 			voltMint,
 			devoltKeypair.publicKey
 		);
+		console.log("Devolt VOLT Account:", devoltVoltAccount.toBase58());
 
+		console.log("Creating or retrieving Producer USDC Account...");
 		const producerUsdcAccount = await getOrCreateTokenAccount(
 			connection,
 			devoltKeypair,
 			usdcMint,
 			account.maker
 		);
+		console.log("Producer USDC Account:", producerUsdcAccount.toBase58());
 
-		const devoltUsdcBalance = await connection.getTokenAccountBalance(
-			devoltUsdcAccount
+		// Verificação de saldo e minting se necessário
+		await ensureBalance(
+			"USDC",
+			devoltKeypair,
+			devoltUsdcAccount,
+			account.usdc.toNumber()
 		);
-		const requiredUsdcAmount = account.usdc.toNumber();
-
-		if (
-			devoltUsdcBalance.value.uiAmount !== null &&
-			devoltUsdcBalance.value.uiAmount < requiredUsdcAmount
-		) {
-			const mintAmount =
-				requiredUsdcAmount - devoltUsdcBalance.value.uiAmount;
-			if (typeof mintAmount == "number") {
-				console.log(
-					`Minting ${mintAmount} USDC to DeVolt's USDC Account...`
-				);
-				await mintTo(
-					connection,
-					devoltKeypair,
-					usdcMint,
-					devoltUsdcAccount,
-					devoltKeypair.publicKey,
-					mintAmount // * 1_000_000
-				);
-				console.log("Minted additional USDC.");
-			}
-		}
 
 		const accounts = {
 			devoltEscrow: escrowPubKey,
@@ -412,6 +440,7 @@ export async function confirmSelling(params: { escrowPublicKey: string }) {
 		};
 		console.log("Accounts for confirmSelling:", accounts);
 
+		console.log("Preparing transaction to confirm selling...");
 		const tx = await program.methods
 			.confirmSelling()
 			.accounts(accounts)
@@ -419,16 +448,33 @@ export async function confirmSelling(params: { escrowPublicKey: string }) {
 			.rpc();
 		console.log("Transaction ID for confirmSelling:", tx);
 
-		// Log balances after successful transaction
+		// Log dos saldos após a transação
 		await logBalances(connection, account.maker, [usdcMint]);
 		await logBalances(connection, devoltKeypair.publicKey, [
 			usdcMint,
 			voltMint,
 		]);
 
-		return { transactionId: tx };
+		return { transaction_id: tx };
 	} catch (error: any) {
 		console.error("Error in confirmSelling:", error);
+
+		if (error.logs) {
+			console.log("Error logs:", error.logs.join("\n"));
+		}
+
+		if (error.transactionSignature) {
+			try {
+				const txDetails = await connection.getTransaction(
+					error.transactionSignature,
+					{ commitment: "confirmed" }
+				);
+				console.log("Transaction details:", txDetails);
+			} catch (txError) {
+				console.error("Error fetching transaction details:", txError);
+			}
+		}
+
 		return {
 			error: {
 				code: -32603,
@@ -440,54 +486,47 @@ export async function confirmSelling(params: { escrowPublicKey: string }) {
 
 export async function confirmBuying(params: { escrowPublicKey: string }) {
 	const { escrowPublicKey } = params;
+	console.log("confirmBuying called with params:", params);
 
 	try {
 		const escrowPubKey = new PublicKey(escrowPublicKey);
+		console.log("Escrow Public Key:", escrowPubKey.toBase58());
 
-		const account = (await program.account.deVoltEscrow.fetch(
-			escrowPubKey
-		)) as {
-			seed: anchor.BN;
-			bump: number;
-			maker: PublicKey;
-			devolt: PublicKey;
-			makerUsdcAccount: PublicKey;
-			devoltUsdcAccount: PublicKey;
-			devoltVoltAccount: PublicKey;
-			usdcMint: PublicKey;
-			voltMint: PublicKey;
-			volts: anchor.BN;
-			usdc: anchor.BN;
-			transaction: { sell?: {}; buy?: {} };
-			state: { confirmed?: {}; pending?: {}; refunded?: {} };
-		};
-		console.log("Fetched escrow account for confirmSelling:", account);
-		if (account.state.confirmed) {
-			console.log("Transaction already confirmed.");
-			return { transactionId: null };
-		}
+		console.log("Compressing accounts...");
+		await compressAccounts(connection, devoltKeypair);
+		console.log("Compression complete.");
 
+		const account = await program.account.deVoltEscrow.fetch(escrowPubKey);
+		console.log("Fetched escrow account for confirmBuying:", account);
+
+		console.log("Creating or retrieving Devolt USDC Account...");
 		const devoltUsdcAccount = await getOrCreateTokenAccount(
 			connection,
 			devoltKeypair,
 			usdcMint,
 			devoltKeypair.publicKey
 		);
+		console.log("Devolt USDC Account:", devoltUsdcAccount.toBase58());
 
+		console.log("Creating or retrieving Devolt VOLT Account...");
 		const devoltVoltAccount = await getOrCreateTokenAccount(
 			connection,
 			devoltKeypair,
 			voltMint,
 			devoltKeypair.publicKey
 		);
+		console.log("Devolt VOLT Account:", devoltVoltAccount.toBase58());
 
+		console.log("Creating or retrieving Consumer USDC Account...");
 		const consumerUsdcAccount = await getOrCreateTokenAccount(
 			connection,
 			devoltKeypair,
 			usdcMint,
 			account.maker
 		);
+		console.log("Consumer USDC Account:", consumerUsdcAccount.toBase58());
 
+		console.log("Creating or retrieving Devolt Escrow USDC Account...");
 		const devoltEscrowUsdcAccount = await getOrCreateTokenAccount(
 			connection,
 			devoltKeypair,
@@ -495,33 +534,18 @@ export async function confirmBuying(params: { escrowPublicKey: string }) {
 			escrowPubKey,
 			true
 		);
-
-		const devoltUsdcBalance = await connection.getTokenAccountBalance(
-			devoltUsdcAccount
+		console.log(
+			"Devolt Escrow USDC Account:",
+			devoltEscrowUsdcAccount.toBase58()
 		);
-		const requiredUsdcAmount = account.usdc.toNumber();
 
-		if (
-			devoltUsdcBalance.value.uiAmount !== null &&
-			devoltUsdcBalance.value.uiAmount < requiredUsdcAmount
-		) {
-			const mintAmount =
-				requiredUsdcAmount - devoltUsdcBalance.value.uiAmount;
-			if (typeof mintAmount == "number") {
-				console.log(
-					`Minting ${mintAmount} USDC to DeVolt's USDC Account...`
-				);
-				await mintTo(
-					connection,
-					devoltKeypair,
-					usdcMint,
-					devoltUsdcAccount,
-					devoltKeypair.publicKey,
-					mintAmount // * 1_000_000
-				);
-				console.log("Minted additional USDC.");
-			}
-		}
+		// Verificação de saldo e minting se necessário
+		await ensureBalance(
+			"USDC",
+			devoltKeypair,
+			devoltUsdcAccount,
+			account.usdc.toNumber()
+		);
 
 		const accounts = {
 			devoltEscrow: escrowPubKey,
@@ -538,6 +562,7 @@ export async function confirmBuying(params: { escrowPublicKey: string }) {
 		};
 		console.log("Accounts for confirmBuying:", accounts);
 
+		console.log("Preparing transaction to confirm buying...");
 		const tx = await program.methods
 			.confirmBuying()
 			.accounts(accounts)
@@ -545,15 +570,33 @@ export async function confirmBuying(params: { escrowPublicKey: string }) {
 			.rpc();
 		console.log("Transaction ID for confirmBuying:", tx);
 
+		// Log dos saldos após a transação
 		await logBalances(connection, account.maker, [usdcMint]);
 		await logBalances(connection, devoltKeypair.publicKey, [
 			usdcMint,
 			voltMint,
 		]);
 
-		return { transactionId: tx };
+		return { transaction_id: tx };
 	} catch (error: any) {
 		console.error("Error in confirmBuying:", error);
+
+		if (error.logs) {
+			console.log("Error logs:", error.logs.join("\n"));
+		}
+
+		if (error.transactionSignature) {
+			try {
+				const txDetails = await connection.getTransaction(
+					error.transactionSignature,
+					{ commitment: "confirmed" }
+				);
+				console.log("Transaction details:", txDetails);
+			} catch (txError) {
+				console.error("Error fetching transaction details:", txError);
+			}
+		}
+
 		return {
 			error: {
 				code: -32603,

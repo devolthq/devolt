@@ -1,7 +1,5 @@
 use anchor_client::solana_sdk::{
-    clock::Clock,
     signature::{Keypair, Signature},
-    sysvar::Sysvar,
 };
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -23,8 +21,8 @@ struct Payload {
 
 #[derive(Debug, Deserialize)]
 struct ResponseResult {
-    transactionId: String,
-    escrowPublicKey: String,
+    transaction_id: String,
+    escrow_public_key: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -119,8 +117,8 @@ impl PaymentEngineService {
         })?;
 
         if let Some(result) = response_json.result {
-            let transaction_id = result.transactionId;
-            let escrow_public_key = result.escrowPublicKey;
+            let transaction_id = result.transaction_id;
+            let escrow_public_key = result.escrow_public_key.unwrap_or_default();
             let signature = Signature::from_str(&transaction_id).map_err(|e| {
                 eprintln!("Error parsing signature: {}", e);
                 ErrorResponse {
@@ -194,8 +192,8 @@ impl PaymentEngineService {
         })?;
 
         if let Some(result) = response_json.result {
-            let transaction_id = result.transactionId;
-            let escrow_public_key = result.escrowPublicKey;
+            let transaction_id = result.transaction_id;
+            let escrow_public_key = result.escrow_public_key.unwrap_or_default();
             let signature = Signature::from_str(&transaction_id).map_err(|e| {
                 eprintln!("Error parsing signature: {}", e);
                 ErrorResponse {
@@ -270,14 +268,7 @@ impl PaymentEngineService {
         })?;
 
         if let Some(result) = response_json.result {
-            if result.escrowPublicKey.is_empty() {
-                eprintln!("Missing escrowPublicKey in response");
-                return Err(ErrorResponse {
-                    status_code: 500,
-                    error: "Missing escrowPublicKey in response".to_string(),
-                });
-            }
-            let transaction_id = result.transactionId;
+            let transaction_id = result.transaction_id;
             Signature::from_str(&transaction_id).map_err(|e| {
                 eprintln!("Error parsing signature: {}", e);
                 ErrorResponse {
@@ -351,7 +342,7 @@ impl PaymentEngineService {
         })?;
 
         if let Some(result) = response_json.result {
-            let transaction_id = result.transactionId;
+            let transaction_id = result.transaction_id;
             Signature::from_str(&transaction_id).map_err(|e| {
                 eprintln!("Error parsing signature: {}", e);
                 ErrorResponse {
