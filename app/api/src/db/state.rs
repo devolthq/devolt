@@ -40,6 +40,10 @@ impl AppState {
         let payment_engine_service_url = std::env::var("PAYMENT_ENGINE_SERVICE_URL")
             .expect("PAYMENT_ENGINE_SERVICE_URL is not set");
 
+        println!("USDC_MINT: {:?}", usdc_mint);
+        println!("VOLT_MINT: {:?}", volt_mint);
+        println!("PAYMENT_ENGINE_SERVICE_URL: {:?}", payment_engine_service_url);
+
         let devolt_bytes = private_key_str
             .trim_matches(|c| c == '[' || c == ']')
             .split(',')

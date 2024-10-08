@@ -13,7 +13,6 @@ import {
 } from "react-native";
 import { useAuth, User } from "@/hooks/useAuth";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Link } from "expo-router";
 import * as Location from "expo-location";
 import { PanGestureHandler } from "react-native-gesture-handler";
 import Animated, {
@@ -34,8 +33,6 @@ import {
 } from "./components/SellEnergyContainer";
 import { ExternalLink } from "@/components/ExternalLink";
 import { buyEnergy, sellEnergy } from "@/services/paymentEngineService";
-import { Connection, PublicKey } from "@solana/web3.js";
-import { getAccount } from "@solana/spl-token";
 import { RPC_URL } from "@/constants/Solana";
 import { StatusBar } from "expo-status-bar";
 
