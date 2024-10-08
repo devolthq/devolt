@@ -1,12 +1,6 @@
 import http from "http";
-import { URL } from "url";
-import {
-	sellEnergy,
-	confirmSelling,
-	buyEnergy,
-	confirmBuying,
-} from "./paymentEngineService";
 import dotenv from "dotenv";
+import { handleJsonRpcRequest } from "./controllers/rpcController";
 
 dotenv.config();
 
@@ -17,49 +11,21 @@ const server = http.createServer(async (req, res) => {
 			body += chunk.toString();
 		});
 		req.on("end", async () => {
-			let id;
 			try {
-				const parsedBody = JSON.parse(body);
-				id = parsedBody.id;
-				const { method, params } = parsedBody;
-				let result;
-				console.log("Method:", method);
-				switch (method) {
-					case "sell_energy":
-						result = await sellEnergy(params);
-						break;
-					case "confirm_selling":
-						result = await confirmSelling(params);
-						break;
-					case "buy_energy":
-						result = await buyEnergy(params);
-						break;
-					case "confirm_buying":
-						result = await confirmBuying(params);
-						break;
-					default:
-						throw new Error(`Method ${method} not found`);
-				}
-				let response = JSON.stringify({
-					jsonrpc: "2.0",
-					result: result,
-					id,
-				});
-
+				const response = await handleJsonRpcRequest(body);
 				res.writeHead(200, { "Content-Type": "application/json" });
-
-				res.end(response);
+				res.end(JSON.stringify(response));
 			} catch (error: any) {
-				res.writeHead(500, { "Content-Type": "application/json" });
-
-				let response = JSON.stringify({
+				const response = {
 					jsonrpc: "2.0",
-					error: { code: -32602, message: error.message },
-					id,
-				});
-				console.error(error);
-
-				res.end(response);
+					error: {
+						code: -32603,
+						message: error.message || "Internal error",
+					},
+					id: null,
+				};
+				res.writeHead(500, { "Content-Type": "application/json" });
+				res.end(JSON.stringify(response));
 			}
 		});
 	} else {

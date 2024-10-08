@@ -6,12 +6,7 @@ import {
 	sendAndConfirmTransaction,
 	Transaction,
 } from "@solana/web3.js";
-import {
-	ASSOCIATED_TOKEN_PROGRAM_ID,
-	getOrCreateAssociatedTokenAccount,
-	mintTo,
-	TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
+import { getOrCreateAssociatedTokenAccount, mintTo } from "@solana/spl-token";
 import {
 	defaultTestStateTreeAccounts,
 	LightSystemProgram,
@@ -21,21 +16,7 @@ const accountCache: {
 	[pubkey: string]: {
 		[mint: string]: PublicKey;
 	};
-} = {
-	prozjgfrKQP59jGSXJkNKNSVFKCZNnS7FRqAt7dnvpA: {
-		"6tUsS6DoCVNgo6eyfChcg2MLHds5HnqoH7NYo6JMXSB9": new PublicKey(
-			"GFZouUVacbJDiY5AWugTo6umJYxcs67t9mynsRwZk6En"
-		),
-	},
-	admDPuh7ALjfpNr7pupdL7KE7ZCwW8iRuExWFrvZZkX: {
-		"6tUsS6DoCVNgo6eyfChcg2MLHds5HnqoH7NYo6JMXSB9": new PublicKey(
-			"9jWU3om63MQTQagBxwGWvkABcZjt4MjiURsuKdCcaLif"
-		),
-		GG41daTaQcELJcfGDaVRsFVjZ6W6Wb5WEqCNH4RAgcPP: new PublicKey(
-			"2EupzBSBe22CA3oPGr7SC7o9GXDkAN3ia7sHw5sZrcrV"
-		),
-	},
-};
+} = {};
 
 export async function getOrCreateTokenAccount(
 	connection: Connection,
@@ -147,7 +128,7 @@ export async function ensureDevoltUsdcBalance(
 	devoltKeypair: Keypair,
 	devoltUsdcAccount: PublicKey,
 	usdcMint: PublicKey,
-	requiredAmount: number // Valor necessário em USDC
+	requiredAmount: number
 ) {
 	const balance = await connection.getTokenAccountBalance(devoltUsdcAccount);
 	console.log(`DeVolt USDC Balance: ${balance.value.uiAmount} USDC`);
