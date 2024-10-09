@@ -1,4 +1,6 @@
-# DeVolt
+# DeVolt ⚡️
+
+![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
 
 ## Overview
 
@@ -397,6 +399,12 @@ Here are some screenshots of the DeVolt mobile application to give you a better 
 **User Profile**
 
 <img src="./assets/profile.png" alt="Profile" width="300"/>
+
+---
+
+## License
+
+This project is licensed under the [Apache License 2.0](LICENSE).
 
 ---
 
